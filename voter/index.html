@@ -126,6 +126,9 @@ textarea{width:100%;min-height:110px;resize:vertical}
 .info h3{margin:0 0 6px;font-family:var(--f-display);font-size:19px}
 .status{font-size:12.5px;color:var(--muted)}
 @media (max-width:560px){.sheet-row{grid-template-columns:1fr;gap:2px}.sheet-row.head{display:none}.poles{font-size:12.5px}}
+.fam{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.fam-chip{background:var(--chip);border:1px solid var(--rule);border-radius:999px;padding:1px 9px}
+.fam-chip b{font-family:var(--f-mono);font-weight:500}
 .o-bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
 .o-prog{display:grid;gap:4px;font-size:14px;min-width:min(100%,260px)}
 .o-track{display:block;height:8px;border-radius:4px;background:var(--chip);border:1px solid var(--rule);overflow:hidden}
@@ -309,6 +312,24 @@ function matchFor(m, pos){
   return {pct:Math.round(100*num/den), n};
 }
 function stancesSet(m){return Object.keys(m.stances).length;}
+/* Everyone's alignment, not just the person selected under Voter. */
+function familyWith(){return Object.values(state.members).filter(x=>stancesSet(x));}
+function familyHTML(pos){
+  const others=familyWith().filter(x=>x.id!==state.active);
+  if(!pos||!others.length) return "";
+  return `<div class="fam"><span class="k" style="margin:0">Family</span>${others.map(x=>{const r=matchFor(x,pos);
+    return `<span class="fam-chip">${esc(x.name)} <b>${r?r.pct+"%":"—"}</b></span>`;}).join("")}</div>`;
+}
+function bestFor(m,item){
+  if(item.kind==="proposal"){
+    const y=item.pos_yes&&matchFor(m,item.pos_yes), n=item.pos_no&&matchFor(m,item.pos_no);
+    return y&&n?(y.pct>=n.pct?{name:"Yes",pct:y.pct}:{name:"No",pct:n.pct}):null;
+  }
+  let all=(item.candidates||[]).map(c=>({c,r:matchFor(m,c.pos)})).filter(x=>x.r);
+  if(all.some(x=>x.r.n>=2)) all=all.filter(x=>x.r.n>=2);
+  const b=all.sort((a,b)=>b.r.pct-a.r.pct||b.r.n-a.r.n)[0];
+  return b?{name:b.c.name.split(" ").slice(-1)[0].replace(/[()]/g,""),pct:b.r.pct}:null;
+}
 function matchHTML(m,pos){
   const r=matchFor(m,pos);
   if(!stancesSet(m)) return `<div class="match"><div class="lbl"><span>Alignment with ${esc(m.name)}</span><span>set convictions first</span></div></div>`;
@@ -342,7 +363,7 @@ function candHTML(race,c){
       <div><h4>${esc(c.name)}</h4>
         <div class="sub"><span class="party">${esc(c.party||"No party")}</span>${c.incumbent?' <span class="tag strong">Incumbent</span>':""}${sub?" · "+esc(sub):""}</div></div>
     </div>
-    ${c.pos?matchHTML(me(),c.pos):""}
+    ${c.pos?matchHTML(me(),c.pos)+familyHTML(c.pos):""}
     ${c.experience&&c.experience.length?`<div><p class="k">Experience</p>${list(c.experience)}</div>`:""}
     ${c.education?`<div><p class="k">Education</p><div>${esc(c.education)}</div></div>`:""}
     <div class="whys">
@@ -385,7 +406,7 @@ function raceHTML(r){
 }
 function propHTML(p){
   const pick=me().picks[p.id];
-  const mY=p.pos_yes?matchHTML(me(),p.pos_yes):"", mN=p.pos_no?matchHTML(me(),p.pos_no):"";
+  const mY=p.pos_yes?matchHTML(me(),p.pos_yes)+familyHTML(p.pos_yes):"", mN=p.pos_no?matchHTML(me(),p.pos_no)+familyHTML(p.pos_no):"";
   return `<article class="race" id="r-${esc(p.id)}">
     <header><div class="tags"><span class="tag">${esc(p.level||"")}</span><span class="tag strong">Yes or No</span></div>
       <h3>${esc(p.title)}</h3>${p.ballot_language_summary?`<p class="lede">${esc(p.ballot_language_summary)}</p>`:""}</header>
@@ -415,7 +436,8 @@ function partyAbbr(p){p=String(p||"");
   if(/working class/i.test(p))return "WC"; if(/independent|no party/i.test(p))return "I"; return "";}
 function pickText(it){const p=me().picks[it.id]; return Array.isArray(p)?p.join(", "):(p?p.toUpperCase():"");}
 function rowHTML(it){
-  const open=openRows.has(it.id), pick=pickText(it), best=topMatch(me(),it);
+  const open=openRows.has(it.id), pick=pickText(it);
+  const fam=familyWith().map(x=>({x,b:bestFor(x,it)})).filter(o=>o.b);
   let mid;
   if(it.kind==="proposal"){
     mid=`<div class="o-yn"><span><b>Yes</b> ${esc(it.yes_means||"")}</span><span><b>No</b> ${esc(it.no_means||"")}</span></div>`;
@@ -427,7 +449,7 @@ function rowHTML(it){
     <button class="o-head" data-open="${esc(it.id)}" aria-expanded="${open}">
       <span class="o-main"><span class="o-title">${esc(it.office||it.title)}</span>
         <span class="o-sub">${it.kind==="proposal"?"Yes or No":it.vote_for===0?"Seats: see sample ballot":"Vote for "+(it.vote_for||1)}</span>${mid}</span>
-      <span class="o-side"><span class="o-pick ${pick?"set":""}">${pick?"✓ "+esc(pick):"Not marked"}</span>${best?`<span class="o-best">Closest: ${esc(best)}</span>`:""}<span class="o-caret" aria-hidden="true">${open?"Hide":"Details"}</span></span>
+      <span class="o-side"><span class="o-pick ${pick?"set":""}">${pick?"✓ "+esc(pick):"Not marked"}</span>${fam.length?`<span class="o-best">Closest match: ${fam.map(o=>`${esc(o.x.id===state.active?"you":o.x.name)} ${esc(o.b.name)} ${o.b.pct}%`).join(" · ")}</span>`:""}<span class="o-caret" aria-hidden="true">${open?"Hide":"Details"}</span></span>
     </button>
     ${open?`<div class="o-body">${it.kind==="proposal"?propHTML(it):raceHTML(it)}</div>`:""}
   </div>`;
@@ -458,7 +480,7 @@ function renderValues(){
   const m=me(), v=$("#v-values");
   const W=[["0","Doesn't matter"],["1","Matters"],["2","Important"],["3","Deal-breaker"]];
   v.innerHTML=`
-    <div class="notice">Set where ${esc(m.name)} stands on each issue and how much it matters. The guide then shows how closely each candidate's public positions line up. Each candidate was placed only from their own statements, votes and endorsements, never from party label alone. Issues with no clear public position are skipped, not guessed, so newer candidates are scored on fewer issues. Open "How the guide placed them" on any candidate to see the placements. Alignment is a starting point for discussion, not a recommendation.</div>
+    <div class="notice">Each family member sets their own convictions: sign in as yourself, and your answers are yours alone. Set where ${esc(m.name)} stands on each issue and how much it matters, and mark issues that don't matter to you as "Doesn't matter". The guide then shows how closely each candidate's public positions line up. Each candidate was placed only from their own statements, votes and endorsements, never from party label alone. Issues with no clear public position are skipped, not guessed, so newer candidates are scored on fewer issues. Open "How the guide placed them" on any candidate to see the placements. Alignment is a starting point for discussion, not a recommendation.</div>
     ${!canEditActive()?`<div class="notice verify">You're viewing ${esc(m.name)}'s convictions. Only ${esc(m.name)} can change them. Pick yourself under Voter to edit your own.</div>`:""}
     <div class="row"><span class="status" id="sync">${mode==="account"?(fam?"Saved to your family login. Family can see it; only you can change it.":"Saved to your account. Family can see it; only you can change it."):(window.APP_CONFIG?"Saved on this device. Sign in on the family page to keep your own profile.":"Saved on this device. Sign in to claude.ai to keep your own profile.")}</span>
       <span style="flex:1"></span>
