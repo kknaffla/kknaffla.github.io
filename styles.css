@@ -1,0 +1,85 @@
+/* Knaffla Family: the front door. Lake Superior slate with a birch-bark ground and a sunrise amber for what needs attention. */
+:root {
+  --bg: #f4f5f2; --card: #ffffff; --ink: #1b2730; --muted: #5d6b74; --line: #dde2e0;
+  --lake: #24465c; --lake-soft: #e3ecf1; --amber: #a8640c; --amber-soft: #f7ead6;
+  --good: #2e6b45; --chip: #eef1f0;
+  --f-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-body: "Public Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --r: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11171b; --card: #182127; --ink: #e6ecef; --muted: #9aa9b1; --line: #2a353c;
+  --lake: #8cbcd8; --lake-soft: #1d2d37; --amber: #e8b062; --amber-soft: #2e2416;
+  --good: #7cc596; --chip: #212b31; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #11171b; --card: #182127; --ink: #e6ecef; --muted: #9aa9b1; --line: #2a353c;
+  --lake: #8cbcd8; --lake-soft: #1d2d37; --amber: #e8b062; --amber-soft: #2e2416;
+  --good: #7cc596; --chip: #212b31; color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--f-body); -webkit-text-size-adjust: 100%; }
+a { color: var(--lake); }
+:focus-visible { outline: 2px solid var(--lake); outline-offset: 2px; }
+.wrap { max-width: 960px; margin: 0 auto;
+  padding-top: max(20px, env(safe-area-inset-top, 0px)); padding-bottom: max(32px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.muted { color: var(--muted); } .small { font-size: 13.5px; } .pad { padding: 24px 0; }
+h1, h2 { font-family: var(--f-display); font-weight: 700; line-height: 1.15; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(28px, 6vw, 40px); }
+h2 { font-size: 21px; }
+.eyebrow { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+/* header */
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+.head .who { display: grid; gap: 4px; }
+.acct { font: 600 14px var(--f-body); background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+
+/* today cards */
+.today { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 14px; margin-bottom: 30px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; display: grid; gap: 6px; align-content: start; text-decoration: none; color: inherit; min-width: 0; }
+a.card:hover { border-color: var(--lake); }
+.card .k { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.card .big { font-family: var(--f-display); font-size: 30px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.card .big small { font: 500 15px var(--f-body); color: var(--muted); }
+.card.hot { border-color: var(--amber); background: linear-gradient(var(--amber-soft), var(--card) 70%); }
+.card .go { font-weight: 600; color: var(--lake); font-size: 14px; }
+
+/* sections */
+.sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px; margin-top: 12px; }
+.tile { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; padding: 14px; border-radius: var(--r); border: 1px solid var(--line); background: var(--card); text-decoration: none; color: inherit; min-width: 0; }
+a.tile:hover { border-color: var(--lake); }
+.tile .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--lake-soft); color: var(--lake); }
+.tile .ico svg { width: 24px; height: 24px; }
+.tile b { display: block; font-size: 16px; }
+.tile span { font-size: 13px; color: var(--muted); }
+.tile.soon { background: transparent; border-style: dashed; }
+.tile.soon .ico { background: var(--chip); color: var(--muted); }
+.chip { display: inline-block; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; padding: 1px 8px; border-radius: 999px; background: var(--chip); color: var(--muted); margin-left: 6px; vertical-align: 1px; }
+.chip.live { background: var(--lake-soft); color: var(--lake); }
+
+/* forms */
+.signin { max-width: 380px; margin: 8vh auto 0; display: grid; gap: 14px; }
+.signin .mark { width: 56px; height: 56px; }
+label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; }
+input { font: 16px var(--f-body); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; }
+.btn { font: 600 16px var(--f-body); background: var(--lake); color: var(--card); border: 0; border-radius: 10px; padding: 12px 16px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--lake); border: 1px solid var(--line); }
+.btn:disabled { opacity: .6; }
+.linkbtn { background: none; border: 0; color: var(--lake); font: 500 14px var(--f-body); cursor: pointer; padding: 0; justify-self: start; }
+.err { color: #b3261e; font-size: 14px; }
+:root[data-theme="dark"] .err { color: #f2a19a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .err { color: #f2a19a; } }
+
+/* account sheet */
+dialog { border: 1px solid var(--line); border-radius: var(--r); background: var(--card); color: var(--ink); padding: 18px; width: min(420px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgba(10, 20, 26, .45); }
+.sheetgrid { display: grid; gap: 12px; }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; }
+.seg button { font: 500 14px var(--f-body); border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.seg button.on { background: var(--lake); color: var(--card); border-color: var(--lake); }
+
+.foot { margin-top: 36px; font-size: 13px; color: var(--muted); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
