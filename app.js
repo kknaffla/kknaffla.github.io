@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.28-1'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.28-2'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -103,7 +103,7 @@
     const E = CFG.ELECTION; if (!E) return '';
     const days = daysUntil(E.date);
     if (days < 0) return `<div class="card"><div class="k">Voter guide</div><div class="big">Next ballot <small>arrives in September</small></div><div class="small muted">The guide rebuilds itself each fall for the coming election.</div></div>`;
-    return `<a class="card ${days <= 7 ? 'hot' : ''}" href="${esc(safeUrl(E.guide))}" target="_blank" rel="noopener">
+    return `<a class="card ${days <= 7 ? 'hot' : ''}" href="/voter/">
       <div class="k">${esc(E.name)}</div>
       <div class="big">${days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days + ' days'} <small>${fmtDate(E.date)}</small></div>
       <div class="small">Polls open 7 a.m. to 8 p.m. Build your convictions and mark your picks before you go.</div>
@@ -116,8 +116,9 @@
   function render(d) {
     const first = (me.display_name || '').split(' ')[0];
     const tiles = [
-      { name: 'College plan', desc: 'Lily\'s applications, deadlines, scholarships', icon: 'college', href: '/college-plan/' },
-      { name: 'Voter guide', desc: 'Every ballot item, your own convictions. Opens on claude.ai', icon: 'ballot', href: CFG.ELECTION && CFG.ELECTION.guide, ext: true },
+      { name: 'Lily\'s college plan', desc: 'Applications, deadlines, scholarships', icon: 'college', href: '/college-plan/' },
+      { name: 'Amy\'s college plan', desc: 'AP, dual enrollment, grades 10 to 12', icon: 'college', soon: true },
+      { name: 'Voter guide', desc: 'Every ballot item, with your own convictions and picks', icon: 'ballot', href: '/voter/' },
       { name: 'Savings', desc: 'Lily\'s and Amy\'s savings and goals', icon: 'piggy', soon: true },
       { name: 'Money', desc: 'Family accounts and spending', icon: 'money', soon: true },
       { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true },
