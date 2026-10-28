@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.28-2'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.28-3'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -117,7 +117,7 @@
     const first = (me.display_name || '').split(' ')[0];
     const tiles = [
       { name: 'Lily\'s college plan', desc: 'Applications, deadlines, scholarships', icon: 'college', href: '/college-plan/' },
-      { name: 'Amy\'s college plan', desc: 'AP, dual enrollment, grades 10 to 12', icon: 'college', soon: true },
+      { name: 'Amy\'s college plan', desc: 'AP, dual enrollment, grades 10 to 12', icon: 'college', href: '/amy/' },
       { name: 'Voter guide', desc: 'Every ballot item, with your own convictions and picks', icon: 'ballot', href: '/voter/' },
       { name: 'Savings', desc: 'Lily\'s and Amy\'s savings and goals', icon: 'piggy', soon: true },
       { name: 'Money', desc: 'Family accounts and spending', icon: 'money', soon: true },
