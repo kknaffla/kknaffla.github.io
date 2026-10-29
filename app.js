@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-2'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-3'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -211,11 +211,25 @@
         { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true },
         { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true } ] },
     ];
+    // "Your area": the signed-in person's own pages first; the shared areas follow without repeats.
+    const all = areas.flatMap((a) => a.tiles);
+    const pick = (...names) => names.map((n) => all.find((t) => t.name === n)).filter(Boolean);
+    const money = d.money && d.money.family ? 'Family money' : 'My Apple Card';
+    const MINE = {
+      lily: { note: 'Your college plan, savings and ballot', tiles: pick('Lily\'s college plan', 'Savings', money, 'Voter guide') },
+      amy: { note: 'Your college plan and savings', tiles: pick('Amy\'s college plan', 'Savings', money) },
+      kevin: { note: 'Both girls\' plans and the family money', tiles: pick('Lily\'s college plan', 'Amy\'s college plan', money, 'Trips') },
+      janet: { note: 'Both girls\' plans, trips and your money', tiles: pick('Lily\'s college plan', 'Amy\'s college plan', money, 'Trips') },
+    }[first.toLowerCase()];
+    if (MINE && MINE.tiles.length) {
+      for (const a of areas) a.tiles = a.tiles.filter((t) => !MINE.tiles.includes(t));
+      areas.splice(0, areas.length, { name: 'Your area', note: MINE.note, cls: 'mine', tiles: MINE.tiles }, ...areas.filter((a) => a.tiles.length));
+    }
     app.innerHTML = `
       <header class="head"><div class="who"><span class="eyebrow">Knaffla Family</span><h1>${greet()}, ${esc(first)}</h1></div>
         <button class="acct" id="acct">${esc(first)} · Account</button></header>
       <section class="today" aria-label="Today">${collegeCard(d)}${electionCard()}${tripCard(d)}${moneyCards(d)}</section>
-      ${areas.map((a) => `<section class="area" aria-label="${esc(a.name)}"><div class="area-head"><h2>${esc(a.name)}</h2><span>${esc(a.note)}</span></div>
+      ${areas.map((a) => `<section class="area ${a.cls || ''}" aria-label="${esc(a.name)}"><div class="area-head"><h2>${esc(a.name)}</h2><span>${esc(a.note)}</span></div>
         <div class="sections">${a.tiles.map(tile).join('')}</div></section>`).join('')}
       <p class="foot">Add this page to your iPhone Home Screen: tap Share, then Add to Home Screen. Version ${APP_VERSION}.</p>
       <dialog id="sheet"></dialog>`;
