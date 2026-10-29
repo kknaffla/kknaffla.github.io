@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-9'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-10'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -20,7 +20,7 @@
     college: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/></svg>',
     ballot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
     money: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M7 9.5v5M17 9.5v5"/></svg>',
-    piggy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11a7 6 0 0 1 13-2h2v4l-2 1v3h-3v-2H9v2H6v-3a6 6 0 0 1-1-3z"/><path d="M10 7.5a2 2 0 0 1 3 0"/></svg>',
+    moneybag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l-1.5 3h-3z"/><path d="M10.5 6C6 8 4 12 4 15a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5c0-3-2-7-6.5-9"/><path d="M14 11.5c-.5-.7-1.2-1-2-1-1.1 0-2 .6-2 1.5s.9 1.3 2 1.5 2 .6 2 1.5-.9 1.5-2 1.5c-.8 0-1.5-.3-2-1M12 9.5v1M12 16.5v1"/></svg>',
     calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
     suitcase: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M8 7v13M16 7v13"/></svg>',
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
@@ -226,7 +226,7 @@
       { name: 'Voting', note: 'Your own convictions and picks', tiles: [
         { name: 'Voter guide', desc: 'Every item on our ballot, with family alignment', icon: 'ballot', href: '/voter/', theme: 't-vote', pic: '🗳️' } ] },
       { name: 'Money', note: d.money && d.money.family ? 'Accounts, charges and budgets' : 'Your savings and your Apple Card', tiles: [
-        { name: 'Savings', desc: d.money && d.money.family ? 'Lily\'s and Amy\'s savings and goals' : 'Your savings and goal', icon: 'piggy', href: '/money/', theme: 't-save', pic: '🐷' },
+        { name: 'Savings', desc: d.money && d.money.family ? 'Lily\'s and Amy\'s savings and goals' : 'Your savings and goal', icon: 'moneybag', href: '/money/', theme: 't-save', pic: '💰' },
         { name: d.money && d.money.family ? 'Family money' : 'My Apple Card', desc: d.money && d.money.family ? 'Accounts, every charge, budgets' : 'Your own charges and budget', icon: 'money', href: d.money && d.money.family ? '/money/' : '/money/#/transactions?person=me', theme: 't-money', pic: d.money && d.money.family ? '💰' : '💳' } ] },
       { name: 'Home', note: 'Trips now; calendar and iPhone later', tiles: [
         { name: 'Trips', desc: d.trip ? `Next: ${tripHeadline(d.trip)[0]}, ${daysUntil(d.trip.start_date) <= 0 ? 'now' : daysUntil(d.trip.start_date) === 1 ? 'tomorrow' : 'in ' + daysUntil(d.trip.start_date) + ' days'}` : 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/', theme: 't-trip', pic: '🧳' },
