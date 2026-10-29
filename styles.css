@@ -124,3 +124,6 @@ a.card.tripc:hover { filter: brightness(1.05); }
 .card.tripc.art-alps::after { display: none; }
 .card.tripc.art-alps .tripc-title { background: linear-gradient(90deg, #ffd86b, #ffb38a 45%, #ff8fb1); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
 .card.tripc.art-alps .cd { color: #47407a; }
+.headbtns { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.viewas-top { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.viewas-top select { padding: 6px 8px; font-size: 14px; border-radius: 999px; }

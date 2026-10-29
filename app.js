@@ -247,13 +247,15 @@
     app.innerHTML = `
       ${previewing ? `<div class="viewas-bar"><span>Viewing as <b>${esc(first)}</b>. Layout only: the numbers are still yours.</span><button class="linkbtn" id="backme">Back to me</button></div>` : ''}
       <header class="head"><div class="who"><span class="eyebrow">Knaffla Family</span><h1>${greet()}, ${esc(first)}</h1></div>
-        <button class="acct" id="acct">${esc(realFirst())} · Account</button></header>
+        <div class="headbtns">${canViewAs() ? `<label class="viewas-top"><span>View as</span><select id="viewastop">${PEOPLE.map((n) => `<option value="${n === 'Kevin' ? '' : n}"${(viewAs || '') === (n === 'Kevin' ? '' : n) ? ' selected' : ''}>${n === 'Kevin' ? 'Me' : n}</option>`).join('')}</select></label>` : ''}
+        <button class="acct" id="acct">${esc(realFirst())} · Account</button></div></header>
       <section class="today" aria-label="Today">${tripCard(d)}${collegeCard(d)}${electionCard()}${previewing ? '' : moneyCards(d)}</section>
       ${areas.map((a) => `<section class="area ${a.cls || ''}" aria-label="${esc(a.name)}"><div class="area-head"><h2>${esc(a.name)}</h2><span>${esc(a.note)}</span></div>
         <div class="sections">${a.tiles.map(tile).join('')}</div></section>`).join('')}
       <p class="foot">Add this page to your iPhone Home Screen: tap Share, then Add to Home Screen. Version ${APP_VERSION}.</p>
       <dialog id="sheet"></dialog>`;
     document.getElementById('acct').onclick = openAccount;
+    const vt = document.getElementById('viewastop'); if (vt) vt.onchange = () => { viewAs = vt.value; render(lastData); };
     const back = document.getElementById('backme'); if (back) back.onclick = () => { viewAs = ''; render(lastData); };
   }
 
