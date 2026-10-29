@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-10'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-11'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -132,22 +132,22 @@
       const own = a.owner[0] === me.user_id;
       if (!own && !m.family) continue;
       const pct = a.goal ? Math.min(100, Math.round(100 * Number(a.balance || 0) / Number(a.goal.target))) : null;
-      html += `<a class="card" href="/money/#/account/${esc(a.id)}"><div class="k">${esc(own ? 'My savings' : a.name)}</div><div class="big">${usd0.format(a.balance || 0)}</div>
+      html += `<a class="card tc t-save" href="/money/#/account/${esc(a.id)}"><span class="cpic" aria-hidden="true">💰</span><div class="k">${esc(own ? 'My savings' : a.name)}</div><div class="big">${usd0.format(a.balance || 0)}</div>
         ${pct !== null ? `<div class="small">${pct}% of ${usd0.format(a.goal.target)} goal</div><div class="bar"><i style="width:${pct}%"></i></div>` : '<div class="small muted">No goal set yet</div>'}<div class="go">Open savings</div></a>`;
     }
     if (m.family && m.isManager) {
       const diff = m.lastMonth ? Math.round(100 * (m.thisMonth - m.lastMonth) / m.lastMonth) : null;
-      html += `<a class="card" href="/money/"><div class="k">Family money</div><div class="big">${usd0.format(m.thisMonth)} <small>spent this month</small></div>
+      html += `<a class="card tc t-money" href="/money/"><span class="cpic" aria-hidden="true">📊</span><div class="k">Family money</div><div class="big">${usd0.format(m.thisMonth)} <small>spent this month</small></div>
         <div class="small">${diff === null ? 'No data for last month yet' : `${diff >= 0 ? '+' : ''}${diff}% vs ${usd0.format(m.lastMonth)} last month`} · cash ${usd0.format(m.cash)}</div><div class="go">Open money</div></a>`;
     } else if (m.myCharges) {
-      html += `<a class="card" href="/money/#/transactions?person=me"><div class="k">My Apple Card</div><div class="big">${usd0.format(m.myCharges)} <small>this month</small></div><div class="go">See my charges</div></a>`;
+      html += `<a class="card tc t-money" href="/money/#/transactions?person=me"><span class="cpic" aria-hidden="true">💳</span><div class="k">My Apple Card</div><div class="big">${usd0.format(m.myCharges)} <small>this month</small></div><div class="go">See my charges</div></a>`;
     }
     if (m.budget.length) {
       const top = m.budget.slice(0, 3);
-      html += `<a class="card ${top[0].pct >= 100 ? 'hot' : ''}" href="/money/#/budgets"><div class="k">My budget · ${esc(fmtMonth(m.ym))}</div>
+      html += `<a class="card tc t-budget ${top[0].pct >= 100 ? 'hot' : ''}" href="/money/#/budgets"><span class="cpic" aria-hidden="true">🎯</span><div class="k">My budget · ${esc(fmtMonth(m.ym))}</div>
         ${top.map((b) => `<div class="small"><b>${esc(b.name)}</b>${b.person === 'shared' ? ' (Kevin & Janet)' : ''}: ${usd0.format(b.spent)} of ${usd0.format(b.amount)}${b.pct >= 100 ? ' · over' : ''}</div><div class="bar ${b.pct >= 100 ? 'over' : b.pct >= 85 ? 'warn' : ''}"><i style="width:${Math.min(100, b.pct)}%"></i></div>`).join('')}<div class="go">Open budgets</div></a>`;
     } else if (m.family || m.myCharges) {
-      html += `<a class="card" href="/money/#/budgets"><div class="k">My budget · ${esc(fmtMonth(m.ym))}</div><div class="big">${usd0.format(m.mySpend)} <small>spent</small></div><div class="small muted">No budget set yet${m.isManager ? '. Kevin sets amounts on the Budgets page.' : '.'}</div><div class="go">Open budgets</div></a>`;
+      html += `<a class="card tc t-budget" href="/money/#/budgets"><span class="cpic" aria-hidden="true">🎯</span><div class="k">My budget · ${esc(fmtMonth(m.ym))}</div><div class="big">${usd0.format(m.mySpend)} <small>spent</small></div><div class="small muted">No budget set yet${m.isManager ? '. Kevin sets amounts on the Budgets page.' : '.'}</div><div class="go">Open budgets</div></a>`;
     }
     return html;
   }
@@ -155,9 +155,9 @@
   function collegeCard(d) {
     const c = d.cols[0];
     const n = d.tasks.length;
-    if (!c && !n) return `<a class="card" href="/college-plan/"><div class="k">Lily's college plan</div><div class="big">All caught up</div><div class="go">Open college plan</div></a>`;
+    if (!c && !n) return `<a class="card tc t-lily" href="/college-plan/"><span class="cpic" aria-hidden="true">🎓</span><div class="k">Lily's college plan</div><div class="big">All caught up</div><div class="go">Open college plan</div></a>`;
     const days = c ? daysUntil(c.deadline) : null;
-    return `<a class="card ${days !== null && days <= 5 ? 'hot' : ''}" href="/college-plan/">
+    return `<a class="card tc t-lily ${days !== null && days <= 5 ? 'hot' : ''}" href="/college-plan/"><span class="cpic" aria-hidden="true">🎓</span>
       <div class="k">Lily's college plan</div>
       ${c ? `<div class="big">${days === 0 ? 'Today' : days === 1 ? '1 day' : days + ' days'} <small>to ${esc(c.name)} ${esc(c.plan === 'Undecided' ? '' : c.plan)}</small></div><div class="small muted">Deadline ${fmtDate(c.deadline)}${d.cols[1] ? ` · then ${esc(d.cols[1].name)} ${fmtDate(d.cols[1].deadline)}` : ''}</div>` : ''}
       <div class="small">${n ? `${n} open task${n > 1 ? 's' : ''} due this week` : 'No tasks due this week'}</div>
@@ -166,8 +166,8 @@
   function electionCard() {
     const E = CFG.ELECTION; if (!E) return '';
     const days = daysUntil(E.date);
-    if (days < 0) return `<div class="card"><div class="k">Voter guide</div><div class="big">Next ballot <small>arrives in September</small></div><div class="small muted">The guide rebuilds itself each fall for the coming election.</div></div>`;
-    return `<a class="card ${days <= 7 ? 'hot' : ''}" href="/voter/">
+    if (days < 0) return `<div class="card tc t-vote"><span class="cpic" aria-hidden="true">🗳️</span><div class="k">Voter guide</div><div class="big">Next ballot <small>arrives in September</small></div><div class="small muted">The guide rebuilds itself each fall for the coming election.</div></div>`;
+    return `<a class="card tc t-vote ${days <= 7 ? 'hot' : ''}" href="/voter/"><span class="cpic" aria-hidden="true">🗳️</span>
       <div class="k">${esc(E.name)}</div>
       <div class="big">${days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days + ' days'} <small>${fmtDate(E.date)}</small></div>
       <div class="small">Polls open 7 a.m. to 8 p.m. Build your convictions and mark your picks before you go.</div>

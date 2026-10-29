@@ -141,3 +141,25 @@ a.tile.themed:hover { transform: translateY(-2px); filter: brightness(1.07); }
 .tile.themed .wm { position: absolute; right: -8px; bottom: -14px; font-size: 76px; line-height: 1; opacity: .18; transform: rotate(-12deg); pointer-events: none; }
 .tile.themed.soon { opacity: .78; filter: saturate(.7); border: 0; }
 .tile.themed .chip { background: rgba(255,255,255,.22); color: #fff; }
+
+/* Top "today" cards: white and businesslike, with a touch of each section's colors
+   (same themes as the tiles): a gradient top edge, a soft tint, and a picture badge. */
+.t-budget { --g1: #0e5a6b; --g2: #1f8fa3; }
+.card.tc { position: relative; overflow: hidden; --acc: var(--g1); padding-top: 20px;
+  border: 1px solid color-mix(in srgb, var(--g1) 20%, var(--line));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--g2) 13%, var(--card)) 0%, var(--card) 58%);
+  box-shadow: 0 2px 10px rgba(20, 30, 40, .06); transition: transform .15s ease, border-color .15s ease; }
+.card.tc::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: linear-gradient(90deg, var(--g1), var(--g2)); }
+a.card.tc:hover { transform: translateY(-2px); border-color: var(--g2); }
+.card.tc .k { color: var(--acc); padding-right: 52px; }
+.card.tc > .k + * { padding-right: 50px; }
+.card.tc .go { color: var(--acc); }
+.card.tc .bar i { background: linear-gradient(90deg, var(--g1), var(--g2)); }
+.card.tc .bar.warn i { background: var(--amber); }
+.card.tc .bar.over i { background: #b3261e; }
+.card.tc.hot { border-color: var(--amber); box-shadow: 0 0 0 1px var(--amber), 0 2px 10px rgba(20, 30, 40, .06); }
+.cpic { position: absolute; top: 16px; right: 14px; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; line-height: 1;
+  background: linear-gradient(135deg, var(--g1), var(--g2)); box-shadow: 0 3px 8px color-mix(in srgb, var(--g1) 35%, transparent); }
+:root[data-theme="dark"] .card.tc { --acc: color-mix(in srgb, var(--g2) 55%, #fff); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .card.tc { --acc: color-mix(in srgb, var(--g2) 55%, #fff); } }
+@media (prefers-reduced-motion: reduce) { .card.tc { transition: none; } a.card.tc:hover { transform: none; } }
