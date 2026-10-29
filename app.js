@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-11'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-12'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -27,7 +27,7 @@
     mark: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#24465c"/><path d="M14 46h36" stroke="#f4f5f2" stroke-width="3" stroke-linecap="round"/><path d="M20 46V30l12-10 12 10v16" fill="none" stroke="#f4f5f2" stroke-width="3" stroke-linejoin="round"/><circle cx="46" cy="18" r="5" fill="#e8b062"/></svg>',
   };
 
-  let sb = null, session = null, me = null, started = false;
+  let sb = null, session = null, me = null, started = false, family = [];
 
   /* ---------- sign-in ---------- */
   function viewSignIn(msg) {
@@ -76,7 +76,8 @@
     session = (await sb.auth.getSession()).data.session;
     if (!session) return viewSignIn();
     const { data: members, error } = await sb.from('members').select('user_id, display_name, role');
-    me = (members || []).find((m) => m.user_id === session.user.id) || null;
+    family = members || [];
+    me = family.find((m) => m.user_id === session.user.id) || null;
     if (error || !me) {
       app.innerHTML = `<div class="signin"><h1>Almost there</h1><p>You're signed in as ${esc(session.user.email)}, but your account isn't on the family list yet. Ask Kevin to add you.</p><button class="btn ghost" id="out">Sign out</button></div>`;
       document.getElementById('out').onclick = signOut; return;
@@ -131,10 +132,24 @@
     for (const a of m.savings) {
       const own = a.owner[0] === me.user_id;
       if (!own && !m.family) continue;
-      const pct = a.goal ? Math.min(100, Math.round(100 * Number(a.balance || 0) / Number(a.goal.target))) : null;
-      html += `<a class="card tc t-save" href="/money/#/account/${esc(a.id)}"><span class="cpic" aria-hidden="true">💰</span><div class="k">${esc(own ? 'My savings' : a.name)}</div><div class="big">${usd0.format(a.balance || 0)}</div>
-        ${pct !== null ? `<div class="small">${pct}% of ${usd0.format(a.goal.target)} goal</div><div class="bar"><i style="width:${pct}%"></i></div>` : '<div class="small muted">No goal set yet</div>'}<div class="go">Open savings</div></a>`;
+      html += savingsCard(a, own);
     }
+    return html + moneyRest(m);
+  }
+  // One savings account card. "My savings" when it's the viewer's own (or the person Kevin is viewing as).
+  function savingsCard(a, own) {
+      const pct = a.goal ? Math.min(100, Math.round(100 * Number(a.balance || 0) / Number(a.goal.target))) : null;
+      return `<a class="card tc t-save" href="/money/#/account/${esc(a.id)}"><span class="cpic" aria-hidden="true">💰</span><div class="k">${esc(own ? 'My savings' : a.name)}</div><div class="big">${usd0.format(a.balance || 0)}</div>
+        ${pct !== null ? `<div class="small">${pct}% of ${usd0.format(a.goal.target)} goal</div><div class="bar"><i style="width:${pct}%"></i></div>` : '<div class="small muted">No goal set yet</div>'}<div class="go">Open savings</div></a>`;
+  }
+  // View as Lily or Amy: her own savings card, as she sees it (Kevin can see every savings account).
+  function previewMoneyCards(d, first) {
+    const m = d.money; if (!m) return '';
+    const who = family.find((p) => (p.display_name || '').split(' ')[0].toLowerCase() === first.toLowerCase());
+    return who ? m.savings.filter((a) => a.owner[0] === who.user_id).map((a) => savingsCard(a, true)).join('') : '';
+  }
+  function moneyRest(m) {
+    let html = '';
     if (m.family && m.isManager) {
       const diff = m.lastMonth ? Math.round(100 * (m.thisMonth - m.lastMonth) / m.lastMonth) : null;
       html += `<a class="card tc t-money" href="/money/"><span class="cpic" aria-hidden="true">📊</span><div class="k">Family money</div><div class="big">${usd0.format(m.thisMonth)} <small>spent this month</small></div>
@@ -248,11 +263,11 @@
       areas.splice(0, areas.length, { name: 'Your area', note: MINE.note, cls: 'mine', tiles: MINE.tiles }, ...areas.filter((a) => a.tiles.length));
     }
     app.innerHTML = `
-      ${previewing ? `<div class="viewas-bar"><span>Viewing as <b>${esc(first)}</b>. Layout only: the numbers are still yours.</span><button class="linkbtn" id="backme">Back to me</button></div>` : ''}
+      ${previewing ? `<div class="viewas-bar"><span>Viewing as <b>${esc(first)}</b>. Layout only${/^(lily|amy)$/i.test(first) ? '; her savings card shows her real balance' : ': the numbers are still yours'}.</span><button class="linkbtn" id="backme">Back to me</button></div>` : ''}
       <header class="head"><div class="who"><span class="eyebrow">Knaffla Family</span><h1>${greet()}, ${esc(first)}</h1></div>
         <div class="headbtns">${canViewAs() ? `<label class="viewas-top"><span>View as</span><select id="viewastop">${PEOPLE.map((n) => `<option value="${n === 'Kevin' ? '' : n}"${(viewAs || '') === (n === 'Kevin' ? '' : n) ? ' selected' : ''}>${n === 'Kevin' ? 'Me' : n}</option>`).join('')}</select></label>` : ''}
         <button class="acct" id="acct">${esc(realFirst())} · Account</button></div></header>
-      <section class="today" aria-label="Today">${collegeCard(d)}${electionCard()}${previewing ? '' : moneyCards(d)}${tripCard(d)}</section>
+      <section class="today" aria-label="Today">${collegeCard(d)}${electionCard()}${previewing ? previewMoneyCards(d, first) : moneyCards(d)}${tripCard(d)}</section>
       ${areas.map((a) => `<section class="area ${a.cls || ''}" aria-label="${esc(a.name)}"><div class="area-head"><h2>${esc(a.name)}</h2><span>${esc(a.note)}</span></div>
         <div class="sections">${a.tiles.map(tile).join('')}</div></section>`).join('')}
       <p class="foot">Add this page to your iPhone Home Screen: tap Share, then Add to Home Screen. Version ${APP_VERSION}.</p>
