@@ -45,6 +45,10 @@ a.card:hover { border-color: var(--lake); }
 .card.hot { border-color: var(--amber); background: linear-gradient(var(--amber-soft), var(--card) 70%); }
 .card .go { font-weight: 600; color: var(--lake); font-size: 14px; }
 
+/* areas */
+.area { margin-bottom: 26px; }
+.area-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.area-head span { font-size: 13px; color: var(--muted); }
 /* sections */
 .sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px; margin-top: 12px; }
 .tile { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; padding: 14px; border-radius: var(--r); border: 1px solid var(--line); background: var(--card); text-decoration: none; color: inherit; min-width: 0; }

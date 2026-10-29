@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.28-3'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.28-4'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -115,21 +115,25 @@
   }
   function render(d) {
     const first = (me.display_name || '').split(' ')[0];
-    const tiles = [
-      { name: 'Lily\'s college plan', desc: 'Applications, deadlines, scholarships', icon: 'college', href: '/college-plan/' },
-      { name: 'Amy\'s college plan', desc: 'AP, dual enrollment, grades 10 to 12', icon: 'college', href: '/amy/' },
-      { name: 'Voter guide', desc: 'Every ballot item, with your own convictions and picks', icon: 'ballot', href: '/voter/' },
-      { name: 'Savings', desc: 'Lily\'s and Amy\'s savings and goals', icon: 'piggy', soon: true },
-      { name: 'Money', desc: 'Family accounts and spending', icon: 'money', soon: true },
-      { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true },
-      { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true },
+    const areas = [
+      { name: 'College', note: 'Each girl has her own plan', tiles: [
+        { name: 'Lily\'s college plan', desc: 'Class of 2027: applications, deadlines, scholarships', icon: 'college', href: '/college-plan/' },
+        { name: 'Amy\'s college plan', desc: 'Class of 2029: AP, dual enrollment, grades 10 to 12', icon: 'college', href: '/amy/' } ] },
+      { name: 'Voting', note: 'Your own convictions and picks', tiles: [
+        { name: 'Voter guide', desc: 'Every item on our ballot, with family alignment', icon: 'ballot', href: '/voter/' } ] },
+      { name: 'Money', note: 'Coming later', tiles: [
+        { name: 'Savings', desc: 'Lily\'s and Amy\'s savings and goals', icon: 'piggy', soon: true },
+        { name: 'Family money', desc: 'Accounts and spending', icon: 'money', soon: true } ] },
+      { name: 'Home', note: 'Coming later', tiles: [
+        { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true },
+        { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true } ] },
     ];
     app.innerHTML = `
       <header class="head"><div class="who"><span class="eyebrow">Knaffla Family</span><h1>${greet()}, ${esc(first)}</h1></div>
         <button class="acct" id="acct">${esc(first)} · Account</button></header>
       <section class="today" aria-label="Today">${collegeCard(d)}${electionCard()}</section>
-      <h2>Family pages</h2>
-      <section class="sections">${tiles.map(tile).join('')}</section>
+      ${areas.map((a) => `<section class="area" aria-label="${esc(a.name)}"><div class="area-head"><h2>${esc(a.name)}</h2><span>${esc(a.note)}</span></div>
+        <div class="sections">${a.tiles.map(tile).join('')}</div></section>`).join('')}
       <p class="foot">Add this page to your iPhone Home Screen: tap Share, then Add to Home Screen. Version ${APP_VERSION}.</p>
       <dialog id="sheet"></dialog>`;
     document.getElementById('acct').onclick = openAccount;
