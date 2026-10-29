@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-1'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-2'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -85,7 +85,7 @@
     const [cols, tasks, trips] = await Promise.all([
       sb.from('colleges').select('name, deadline, plan, status').gte('deadline', t).not('status', 'in', '("Submitted","Complete","Admitted","Waitlisted","Denied","Not applying")').order('deadline').limit(3),
       sb.from('tasks').select('id, title, due_date, status, is_event').gte('due_date', t).lte('due_date', week).not('status', 'in', '("Done","Submitted","Not needed")').order('due_date').limit(50),
-      sb.from('trips').select('id, name, start_date, end_date, trip_items(title, kind, done)').gte('end_date', t).not('status', 'in', '("Done","Cancelled")').order('start_date').limit(1),
+      sb.from('trips').select('id, name, kind, destination, start_date, end_date, trip_items(title, kind, done)').gte('end_date', t).not('status', 'in', '("Done","Cancelled")').order('start_date').limit(1),
     ]);
     render({ cols: cols.data || [], tasks: (tasks.data || []).filter((x) => !x.is_event), trip: (trips.data || [])[0] || null, money: await loadMoney() });
   }
@@ -173,20 +173,27 @@
       <div class="small">Polls open 7 a.m. to 8 p.m. Build your convictions and mark your picks before you go.</div>
       <div class="go">Open voter guide</div></a>`;
   }
+  // Trips: the colorful card, themed by the kind of trip (same colors as /trips/).
+  const TRIP_THEME = { Weekend: ['k-weekend', '🎭'], 'Spring break': ['k-spring', '🌴'], Summer: ['k-summer', '☀️'], Holiday: ['k-holiday', '🎄'], Other: ['k-other', '🧭'] };
   function tripCard(d) {
-    const t = d.trip; if (!t) return '';
+    const t = d.trip;
+    if (!t) return `<a class="card tripc k-summer" href="/trips/"><div class="tripc-top"><span class="k">Trips &amp; vacations</span><span class="pic" aria-hidden="true">🧳</span></div>
+      <div class="big">Where to next?</div><div class="small">Weekend events, spring break, summer. Add an idea any time.</div><div class="go">Plan a trip</div></a>`;
+    const [cls, pic] = TRIP_THEME[t.kind] || TRIP_THEME.Other;
     const days = daysUntil(t.start_date);
-    const need = (t.trip_items || []).filter((x) => x.kind === 'Booking' && !x.done);
-    return `<a class="card ${need.length && days <= 14 ? 'hot' : ''}" href="/trips/#/trip/${esc(t.id)}">
-      <div class="k">Next trip</div>
+    const books = (t.trip_items || []).filter((x) => x.kind === 'Booking'), need = books.filter((x) => !x.done);
+    const pct = books.length ? Math.round(100 * (books.length - need.length) / books.length) : 0;
+    return `<a class="card tripc ${cls}" href="/trips/#/trip/${esc(t.id)}">
+      <div class="tripc-top"><span class="k">Next trip</span><span class="pic" aria-hidden="true">${pic}</span></div>
       <div class="big">${days <= 0 ? 'Now' : days === 1 ? 'Tomorrow' : days + ' days'} <small>to ${esc(t.name)}</small></div>
-      <div class="small muted">${fmtDate(t.start_date)}${t.end_date && t.end_date !== t.start_date ? ' to ' + fmtDate(t.end_date) : ''}</div>
-      <div class="small">${need.length ? need.map((x) => esc(x.title)).join(', ') + ': not booked' : 'Everything is booked'}</div>
+      <div class="small">${fmtDate(t.start_date)}${t.end_date && t.end_date !== t.start_date ? ' to ' + fmtDate(t.end_date) : ''}${t.destination ? ' · 📍 ' + esc(t.destination) : ''}</div>
+      ${books.length ? `<div class="tripc-prog"><div class="tr"><i style="width:${pct}%"></i></div><span>${books.length - need.length} of ${books.length} booked</span></div>
+        <div class="small">${need.length ? '⚠️ Still to book: ' + need.map((x) => esc(x.title)).join(', ') : '🎉 Everything is booked'}</div>` : ''}
       <div class="go">Open trip</div></a>`;
   }
   function tile(t) {
     const inner = `<span class="ico">${ICON[t.icon]}</span><span><b>${esc(t.name)}${t.soon ? '<span class="chip">Coming soon</span>' : ''}</b><span>${esc(t.desc)}</span></span>`;
-    return t.soon ? `<div class="tile soon">${inner}</div>` : `<a class="tile" href="${esc(safeUrl(t.href))}"${t.ext ? ' target="_blank" rel="noopener"' : ''}>${inner}</a>`;
+    return t.soon ? `<div class="tile soon">${inner}</div>` : `<a class="tile ${t.cls || ''}" href="${esc(safeUrl(t.href))}"${t.ext ? ' target="_blank" rel="noopener"' : ''}>${inner}</a>`;
   }
   function render(d) {
     const first = (me.display_name || '').split(' ')[0];
@@ -200,7 +207,7 @@
         { name: 'Savings', desc: d.money && d.money.family ? 'Lily\'s and Amy\'s savings and goals' : 'Your savings and goal', icon: 'piggy', href: '/money/' },
         { name: d.money && d.money.family ? 'Family money' : 'My Apple Card', desc: d.money && d.money.family ? 'Accounts, every charge, budgets' : 'Your own charges and budget', icon: 'money', href: d.money && d.money.family ? '/money/' : '/money/#/transactions?person=me' } ] },
       { name: 'Home', note: 'Trips now; calendar and iPhone later', tiles: [
-        { name: 'Trips', desc: 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/' },
+        { name: 'Trips', desc: 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/', cls: 'fun' },
         { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true },
         { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true } ] },
     ];
