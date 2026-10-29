@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.28-4'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-1'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -22,6 +22,7 @@
     money: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M7 9.5v5M17 9.5v5"/></svg>',
     piggy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 11a7 6 0 0 1 13-2h2v4l-2 1v3h-3v-2H9v2H6v-3a6 6 0 0 1-1-3z"/><path d="M10 7.5a2 2 0 0 1 3 0"/></svg>',
     calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+    suitcase: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M8 7v13M16 7v13"/></svg>',
     phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
     mark: '<svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#24465c"/><path d="M14 46h36" stroke="#f4f5f2" stroke-width="3" stroke-linecap="round"/><path d="M20 46V30l12-10 12 10v16" fill="none" stroke="#f4f5f2" stroke-width="3" stroke-linejoin="round"/><circle cx="46" cy="18" r="5" fill="#e8b062"/></svg>',
   };
@@ -81,11 +82,74 @@
       document.getElementById('out').onclick = signOut; return;
     }
     const t = todayISO(), week = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
-    const [cols, tasks] = await Promise.all([
+    const [cols, tasks, trips] = await Promise.all([
       sb.from('colleges').select('name, deadline, plan, status').gte('deadline', t).not('status', 'in', '("Submitted","Complete","Admitted","Waitlisted","Denied","Not applying")').order('deadline').limit(3),
       sb.from('tasks').select('id, title, due_date, status, is_event').gte('due_date', t).lte('due_date', week).not('status', 'in', '("Done","Submitted","Not needed")').order('due_date').limit(50),
+      sb.from('trips').select('id, name, start_date, end_date, trip_items(title, kind, done)').gte('end_date', t).not('status', 'in', '("Done","Cancelled")').order('start_date').limit(1),
     ]);
-    render({ cols: cols.data || [], tasks: (tasks.data || []).filter((x) => !x.is_event) });
+    render({ cols: cols.data || [], tasks: (tasks.data || []).filter((x) => !x.is_event), trip: (trips.data || [])[0] || null, money: await loadMoney() });
+  }
+
+  /* ---------- money (only what this person may see; the database decides) ---------- */
+  async function loadMoney() {
+    const ym = todayISO().slice(0, 7), lm = (() => { const [y, m] = ym.split('-').map(Number); return new Date(Date.UTC(y, m - 2, 15)).toISOString().slice(0, 7); })();
+    const [acc, tx, st, cats, rules, budgets, goals] = await Promise.all([
+      sb.from('accounts').select('id, name, type, owner, balance, visible_to'),
+      sb.from('transactions').select('account_id, date, amount, type, excluded, purchased_by, category, parent_category, merchant, name').gte('date', lm + '-01').order('date', { ascending: false }).range(0, 1999),
+      sb.from('money_settings').select('admins, managers').eq('id', 1).maybeSingle(),
+      sb.from('budget_categories').select('id, name, sort').order('sort'),
+      sb.from('category_rules').select('kind, pattern, category_id, sort').order('sort'),
+      sb.from('budgets').select('person, category_id, amount'),
+      sb.from('savings_goals').select('account_id, target, target_date'),
+    ]);
+    if (acc.error) return null; // money tables not set up yet
+    const A = acc.data || [], S = st.data || { admins: [], managers: [] }, CATS = cats.data || [], GOALS = goals.data || [];
+    const RULES = (rules.data || []).sort((x, y) => (x.kind === y.kind ? x.sort - y.sort : x.kind === 'merchant' ? -1 : 1));
+    const acct = (id) => A.find((a) => a.id === id);
+    const personOf = (t) => t.purchased_by || ((a) => !a || !a.owner.length ? null : a.owner.length === 1 ? a.owner[0] : 'shared')(acct(t.account_id));
+    const categoryOf = (t) => { const text = String(t.merchant || t.name || '').toLowerCase(); for (const r of RULES) { if (r.kind === 'merchant' && text.includes(r.pattern.toLowerCase())) return r.category_id; if (r.kind === 'category' && (t.category === r.pattern || t.parent_category === r.pattern)) return r.category_id; } return (CATS.find((c) => c.name === 'Other') || {}).id; };
+    const counts = (t) => t.type === 'spending' && !t.excluded;
+    const T = tx.data || [];
+    const spend = (m, pred) => T.filter((t) => t.date.slice(0, 7) === m && counts(t) && (!pred || pred(t))).reduce((s, t) => s + Number(t.amount), 0);
+    const isManager = S.managers.includes(me.user_id) || S.admins.includes(me.user_id);
+    const savings = A.filter((a) => a.type === 'savings' && a.owner.length === 1).map((a) => ({ ...a, goal: GOALS.find((g) => g.account_id === a.id) }));
+    // My budget: categories closest to or over budget this month.
+    const myKey = me.user_id, shared = A.some((a) => a.owner.length === 2 && a.owner.includes(me.user_id));
+    const mine = (b) => b.person === myKey || (shared && b.person === 'shared');
+    const budget = (budgets.data || []).filter((b) => mine(b) && b.amount != null).map((b) => {
+      const sp = spend(ym, (t) => (personOf(t) === b.person) && categoryOf(t) === b.category_id);
+      return { name: (CATS.find((c) => c.id === b.category_id) || { name: '?' }).name, person: b.person, spent: sp, amount: Number(b.amount), pct: Math.round(100 * sp / Number(b.amount)) };
+    }).sort((x, y) => y.pct - x.pct);
+    const mySpend = spend(ym, (t) => personOf(t) === myKey || (shared && personOf(t) === 'shared'));
+    return { family: A.length > savings.filter((a) => a.owner[0] === me.user_id).length, isManager, ym, lm, thisMonth: spend(ym), lastMonth: spend(lm), cash: A.filter((a) => ['checking', 'savings', 'cash'].includes(a.type)).reduce((s, a) => s + Number(a.balance || 0), 0), savings, budget, mySpend, myCharges: T.filter((t) => t.date.slice(0, 7) === ym && t.purchased_by === me.user_id && counts(t)).reduce((s, t) => s + Number(t.amount), 0) };
+  }
+  const usd0 = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  const fmtMonth = (ym) => new Date(ym + '-15T12:00:00Z').toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long' });
+  function moneyCards(d) {
+    const m = d.money; if (!m) return '';
+    let html = '';
+    for (const a of m.savings) {
+      const own = a.owner[0] === me.user_id;
+      if (!own && !m.family) continue;
+      const pct = a.goal ? Math.min(100, Math.round(100 * Number(a.balance || 0) / Number(a.goal.target))) : null;
+      html += `<a class="card" href="/money/#/account/${esc(a.id)}"><div class="k">${esc(own ? 'My savings' : a.name)}</div><div class="big">${usd0.format(a.balance || 0)}</div>
+        ${pct !== null ? `<div class="small">${pct}% of ${usd0.format(a.goal.target)} goal</div><div class="bar"><i style="width:${pct}%"></i></div>` : '<div class="small muted">No goal set yet</div>'}<div class="go">Open savings</div></a>`;
+    }
+    if (m.family && m.isManager) {
+      const diff = m.lastMonth ? Math.round(100 * (m.thisMonth - m.lastMonth) / m.lastMonth) : null;
+      html += `<a class="card" href="/money/"><div class="k">Family money</div><div class="big">${usd0.format(m.thisMonth)} <small>spent this month</small></div>
+        <div class="small">${diff === null ? 'No data for last month yet' : `${diff >= 0 ? '+' : ''}${diff}% vs ${usd0.format(m.lastMonth)} last month`} · cash ${usd0.format(m.cash)}</div><div class="go">Open money</div></a>`;
+    } else if (m.myCharges) {
+      html += `<a class="card" href="/money/#/transactions?person=me"><div class="k">My Apple Card</div><div class="big">${usd0.format(m.myCharges)} <small>this month</small></div><div class="go">See my charges</div></a>`;
+    }
+    if (m.budget.length) {
+      const top = m.budget.slice(0, 3);
+      html += `<a class="card ${top[0].pct >= 100 ? 'hot' : ''}" href="/money/#/budgets"><div class="k">My budget · ${esc(fmtMonth(m.ym))}</div>
+        ${top.map((b) => `<div class="small"><b>${esc(b.name)}</b>${b.person === 'shared' ? ' (Kevin & Janet)' : ''}: ${usd0.format(b.spent)} of ${usd0.format(b.amount)}${b.pct >= 100 ? ' · over' : ''}</div><div class="bar ${b.pct >= 100 ? 'over' : b.pct >= 85 ? 'warn' : ''}"><i style="width:${Math.min(100, b.pct)}%"></i></div>`).join('')}<div class="go">Open budgets</div></a>`;
+    } else if (m.family || m.myCharges) {
+      html += `<a class="card" href="/money/#/budgets"><div class="k">My budget · ${esc(fmtMonth(m.ym))}</div><div class="big">${usd0.format(m.mySpend)} <small>spent</small></div><div class="small muted">No budget set yet${m.isManager ? '. Kevin sets amounts on the Budgets page.' : '.'}</div><div class="go">Open budgets</div></a>`;
+    }
+    return html;
   }
 
   function collegeCard(d) {
@@ -109,6 +173,17 @@
       <div class="small">Polls open 7 a.m. to 8 p.m. Build your convictions and mark your picks before you go.</div>
       <div class="go">Open voter guide</div></a>`;
   }
+  function tripCard(d) {
+    const t = d.trip; if (!t) return '';
+    const days = daysUntil(t.start_date);
+    const need = (t.trip_items || []).filter((x) => x.kind === 'Booking' && !x.done);
+    return `<a class="card ${need.length && days <= 14 ? 'hot' : ''}" href="/trips/#/trip/${esc(t.id)}">
+      <div class="k">Next trip</div>
+      <div class="big">${days <= 0 ? 'Now' : days === 1 ? 'Tomorrow' : days + ' days'} <small>to ${esc(t.name)}</small></div>
+      <div class="small muted">${fmtDate(t.start_date)}${t.end_date && t.end_date !== t.start_date ? ' to ' + fmtDate(t.end_date) : ''}</div>
+      <div class="small">${need.length ? need.map((x) => esc(x.title)).join(', ') + ': not booked' : 'Everything is booked'}</div>
+      <div class="go">Open trip</div></a>`;
+  }
   function tile(t) {
     const inner = `<span class="ico">${ICON[t.icon]}</span><span><b>${esc(t.name)}${t.soon ? '<span class="chip">Coming soon</span>' : ''}</b><span>${esc(t.desc)}</span></span>`;
     return t.soon ? `<div class="tile soon">${inner}</div>` : `<a class="tile" href="${esc(safeUrl(t.href))}"${t.ext ? ' target="_blank" rel="noopener"' : ''}>${inner}</a>`;
@@ -121,17 +196,18 @@
         { name: 'Amy\'s college plan', desc: 'Class of 2029: AP, dual enrollment, grades 10 to 12', icon: 'college', href: '/amy/' } ] },
       { name: 'Voting', note: 'Your own convictions and picks', tiles: [
         { name: 'Voter guide', desc: 'Every item on our ballot, with family alignment', icon: 'ballot', href: '/voter/' } ] },
-      { name: 'Money', note: 'Coming later', tiles: [
-        { name: 'Savings', desc: 'Lily\'s and Amy\'s savings and goals', icon: 'piggy', soon: true },
-        { name: 'Family money', desc: 'Accounts and spending', icon: 'money', soon: true } ] },
-      { name: 'Home', note: 'Coming later', tiles: [
+      { name: 'Money', note: d.money && d.money.family ? 'Accounts, charges and budgets' : 'Your savings and your Apple Card', tiles: [
+        { name: 'Savings', desc: d.money && d.money.family ? 'Lily\'s and Amy\'s savings and goals' : 'Your savings and goal', icon: 'piggy', href: '/money/' },
+        { name: d.money && d.money.family ? 'Family money' : 'My Apple Card', desc: d.money && d.money.family ? 'Accounts, every charge, budgets' : 'Your own charges and budget', icon: 'money', href: d.money && d.money.family ? '/money/' : '/money/#/transactions?person=me' } ] },
+      { name: 'Home', note: 'Trips now; calendar and iPhone later', tiles: [
+        { name: 'Trips', desc: 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/' },
         { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true },
         { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true } ] },
     ];
     app.innerHTML = `
       <header class="head"><div class="who"><span class="eyebrow">Knaffla Family</span><h1>${greet()}, ${esc(first)}</h1></div>
         <button class="acct" id="acct">${esc(first)} · Account</button></header>
-      <section class="today" aria-label="Today">${collegeCard(d)}${electionCard()}</section>
+      <section class="today" aria-label="Today">${collegeCard(d)}${electionCard()}${tripCard(d)}${moneyCards(d)}</section>
       ${areas.map((a) => `<section class="area" aria-label="${esc(a.name)}"><div class="area-head"><h2>${esc(a.name)}</h2><span>${esc(a.note)}</span></div>
         <div class="sections">${a.tiles.map(tile).join('')}</div></section>`).join('')}
       <p class="foot">Add this page to your iPhone Home Screen: tap Share, then Add to Home Screen. Version ${APP_VERSION}.</p>

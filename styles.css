@@ -44,6 +44,10 @@ a.card:hover { border-color: var(--lake); }
 .card .big small { font: 500 15px var(--f-body); color: var(--muted); }
 .card.hot { border-color: var(--amber); background: linear-gradient(var(--amber-soft), var(--card) 70%); }
 .card .go { font-weight: 600; color: var(--lake); font-size: 14px; }
+.card .bar { height: 7px; border-radius: 4px; background: var(--chip); overflow: hidden; }
+.card .bar i { display: block; height: 100%; background: var(--good); }
+.card .bar.warn i { background: var(--amber); }
+.card .bar.over i { background: #b3261e; }
 
 /* areas */
 .area { margin-bottom: 26px; }
