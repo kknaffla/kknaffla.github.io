@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-13'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-14'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -251,9 +251,9 @@
       { name: 'Money', note: d.money && d.money.family ? 'Accounts, charges and budgets' : 'Your savings and your Apple Card', tiles: [
         { name: 'Savings', desc: d.money && d.money.family ? 'Lily\'s and Amy\'s savings and goals' : 'Your savings and goal', icon: 'moneybag', href: '/money/', theme: 't-save', pic: '💰' },
         { name: d.money && d.money.family ? 'Family money' : 'My Apple Card', desc: d.money && d.money.family ? 'Accounts, every charge, budgets' : 'Your own charges and budget', icon: 'money', href: d.money && d.money.family ? '/money/' : '/money/#/transactions?person=me', theme: 't-money', pic: d.money && d.money.family ? '💰' : '💳' } ] },
-      { name: 'Home', note: 'Trips now; calendar and iPhone later', tiles: [
+      { name: 'Home', note: 'Trips and the family calendar; iPhone setup later', tiles: [
         { name: 'Trips', desc: d.trip ? `Next: ${tripHeadline(d.trip)[0]}, ${daysUntil(d.trip.start_date) <= 0 ? 'now' : daysUntil(d.trip.start_date) === 1 ? 'tomorrow' : 'in ' + daysUntil(d.trip.start_date) + ' days'}` : 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/', theme: 't-trip', pic: '🧳' },
-        { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true, theme: 't-cal', pic: '📅' },
+        { name: 'Family calendar', desc: 'iPhone Family calendar, both plans, trips and birthdays in one look', icon: 'calendar', href: '/calendar/', theme: 't-cal', pic: '📅' },
         { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true, theme: 't-phone', pic: '📱' } ] },
     ];
     // "Your area": the signed-in person's own pages first; the shared areas follow without repeats.
