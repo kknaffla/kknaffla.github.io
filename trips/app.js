@@ -72,6 +72,20 @@
   // Each kind of trip gets its own colors and picture.
   const THEME = { Weekend: ['k-weekend', '🎭', 'Weekend events'], 'Spring break': ['k-spring', '🌴', 'Spring break'], Summer: ['k-summer', '☀️', 'Summer vacations'], Holiday: ['k-holiday', '🎄', 'Holidays'], Other: ['k-other', '🧭', 'Other trips'] };
   const theme = (t) => THEME[t.kind] || THEME.Other;
+  // Scene art for a trip, picked from its name and place. Original drawings, not copied artwork.
+  const ART = [[/sound of music|alps|austria|mountain|ski\b/i, 'alps']];
+  const artOf = (t) => (ART.find(([re]) => re.test(`${t.name} ${t.destination || ''}`)) || [])[1] || '';
+  const SCENE = {
+    alps: `<svg class="scene" viewBox="0 0 400 140" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <circle cx="338" cy="34" r="14" fill="#ffd86b" opacity=".9"/>
+      <path d="M0 110 L60 50 L95 80 L150 20 L200 85 L250 40 L300 90 L340 58 L400 96 V140 H0Z" fill="#6c5a9c"/>
+      <path d="M60 50 L68 57 L63 55 L58 60 L55 56 L52 58Z M150 20 L162 35 L156 32 L150 38 L144 31 L140 31Z M250 40 L258 48 L253 46 L248 51 L244 46 L242 47Z M340 58 L348 63 L343 62 L338 66 L334 63Z" fill="#fff"/>
+      <path d="M0 118 Q100 92 200 112 T400 106 V140 H0Z" fill="#5fae6a"/>
+      <path d="M0 130 Q120 110 240 126 T400 120 V140 H0Z" fill="#3b8a4f"/>
+      <g fill="#fff"><circle cx="40" cy="128" r="2.2"/><circle cx="92" cy="122" r="2"/><circle cx="150" cy="131" r="2.4"/><circle cx="214" cy="124" r="2"/><circle cx="276" cy="132" r="2.2"/><circle cx="330" cy="125" r="2"/><circle cx="372" cy="131" r="2.3"/></g>
+      <g fill="#ffd86b"><circle cx="40" cy="128" r=".9"/><circle cx="150" cy="131" r="1"/><circle cx="276" cy="132" r=".9"/><circle cx="372" cy="131" r="1"/></g>
+      <g fill="#ffe7a3" font-size="18" font-family="serif"><text x="70" y="40">♪</text><text x="205" y="30">♫</text><text x="290" y="62" font-size="14">♪</text><text x="118" y="70" font-size="13">♫</text></g></svg>`,
+  };
   // A picture for each stop, picked from its words.
   const PICS = [[/drive|leave|head home|road trip/i, '🚗'], [/fly|flight|airport/i, '✈️'], [/shop|mall|store/i, '🛍️'], [/dinner|lunch|breakfast|brunch|restaurant|eat/i, '🍽️'],
     [/show|music|theat|concert|musical|play\b|game|movie/i, '🎭'], [/hotel|check.?in|check.?out|motel|inn\b|resort|lodge/i, '🏨'], [/beach|swim|pool|water ?park/i, '🏖️'],
@@ -86,9 +100,9 @@
 
   /* ---------- views ---------- */
   function tripCard(t) {
-    const [cls, p] = theme(t), n = t.start_date && !isPast(t) ? daysUntil(t.start_date) : null;
-    return `<a class="post ${cls} ${isPast(t) ? 'past' : ''}" href="#/trip/${esc(t.id)}">
-      <div class="post-top"><span class="pic" aria-hidden="true">${p}</span>${n !== null && n >= 0 ? `<span class="count">${countLabel(n)}</span>` : `<span class="stamp">${esc(t.status)}</span>`}</div>
+    const [cls, p] = theme(t), n = t.start_date && !isPast(t) ? daysUntil(t.start_date) : null, art = artOf(t);
+    return `<a class="post ${cls} ${art ? 'art-' + art : ''} ${isPast(t) ? 'past' : ''}" href="#/trip/${esc(t.id)}">
+      <div class="post-top">${art ? SCENE[art] : ''}${art ? '<span></span>' : `<span class="pic" aria-hidden="true">${p}</span>`}${n !== null && n >= 0 ? `<span class="count">${countLabel(n)}</span>` : `<span class="stamp">${esc(t.status)}</span>`}</div>
       <div class="post-body"><b>${esc(t.name)}</b><div class="when">${esc(when(t))}</div>
         ${t.destination ? `<div class="small muted">📍 ${esc(t.destination)}</div>` : ''}${isPast(t) ? '' : progress(t)}</div></a>`;
   }
@@ -153,10 +167,10 @@
   function viewTrip(id) {
     const t = D.trips.find((x) => x.id === id);
     if (!t) return '<p class="pad">That trip isn\'t here. <a href="#/">Back to trips</a></p>';
-    const [cls, p] = theme(t), need = openBookings(t.id), n = t.start_date && !isPast(t) ? daysUntil(t.start_date) : null;
+    const [cls, p] = theme(t), need = openBookings(t.id), n = t.start_date && !isPast(t) ? daysUntil(t.start_date) : null, art = artOf(t);
     const drive = itemsOf(t.id, 'Plan').some((x) => pic(x) === '✈️') ? '✈️' : '🚗';
     return `<a href="#/" class="back">&larr; All trips</a>
-      <section class="hero ${cls}"><div class="hero-main"><span class="eyebrow">${esc(t.kind)} · ${esc(t.status)}</span><h1>${esc(t.name)}</h1>
+      <section class="hero ${cls} ${art ? 'art-' + art : ''}">${art ? SCENE[art] : ''}<div class="hero-main"><span class="eyebrow">${esc(t.kind)} · ${esc(t.status)}</span><h1>${esc(t.name)}</h1>
           <p class="hero-when">${esc(when(t))}</p>${t.who ? `<p>Going: ${esc(t.who)}</p>` : ''}</div>
         <div class="hero-side">${n !== null && n >= 0 ? `<span class="ring">${countLabel(n)}</span>` : `<span class="hero-pic" aria-hidden="true">${p}</span>`}
           <button class="btn light" data-edit-trip="${esc(t.id)}">Edit trip</button></div>
