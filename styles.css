@@ -112,3 +112,15 @@ a.card.tripc:hover { filter: brightness(1.05); }
 .area.mine .area-head { border-bottom: 2px solid var(--lake); }
 .area.mine .area-head h2 { color: var(--lake); }
 .viewas-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; padding: 10px 14px; border-radius: var(--r); background: var(--amber-soft); color: var(--ink); font-size: 14px; }
+
+/* Coming-up trip banner: full width, big headline, countdown badge, optional scene art. */
+.card.tripc.wide { grid-column: 1 / -1; padding: 18px 20px; gap: 8px; }
+.tripc .scene { position: absolute; left: 0; bottom: 0; width: 100%; height: 110px; pointer-events: none; z-index: 0; }
+.tripc > :not(.scene) { position: relative; z-index: 1; }
+.tripc-title { font: 700 clamp(30px, 7vw, 44px)/1.05 var(--f-display); color: #fff; text-wrap: balance; }
+.tripc .cd { background: #fff; color: var(--g1); border-radius: 14px; padding: 6px 12px; text-align: center; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.tripc .cd b { display: block; font: 700 26px/1.05 var(--f-display); letter-spacing: 0; text-transform: none; }
+.card.tripc.art-alps { background: linear-gradient(180deg, #1f2a5c 0%, #47407a 50%, #8a6fb0 100%); padding-bottom: 104px; }
+.card.tripc.art-alps::after { display: none; }
+.card.tripc.art-alps .tripc-title { background: linear-gradient(90deg, #ffd86b, #ffb38a 45%, #ff8fb1); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
+.card.tripc.art-alps .cd { color: #47407a; }

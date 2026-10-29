@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-5'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-7'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -173,23 +173,35 @@
       <div class="small">Polls open 7 a.m. to 8 p.m. Build your convictions and mark your picks before you go.</div>
       <div class="go">Open voter guide</div></a>`;
   }
-  // Trips: the colorful card, themed by the kind of trip (same colors as /trips/).
+  // Trips: a full-width, colorful "coming up" banner for everyone, themed by the kind of trip
+  // (same colors as /trips/). Trips like The Sound of Music get the Alpine scene (an original drawing).
   const TRIP_THEME = { Weekend: ['k-weekend', '🎭'], 'Spring break': ['k-spring', '🌴'], Summer: ['k-summer', '☀️'], Holiday: ['k-holiday', '🎄'], Other: ['k-other', '🧭'] };
+  const tripArt = (t) => (/sound of music|alps|austria|mountain|ski\b/i.test(`${t.name} ${t.destination || ''}`) ? 'alps' : '');
+  const ALPS = `<svg class="scene" viewBox="0 0 400 140" preserveAspectRatio="none" aria-hidden="true">
+    <circle cx="338" cy="34" r="14" fill="#ffd86b" opacity=".9"/>
+    <path d="M0 110 L60 50 L95 80 L150 20 L200 85 L250 40 L300 90 L340 58 L400 96 V140 H0Z" fill="#6c5a9c"/>
+    <path d="M60 50 L68 57 L63 55 L58 60 L55 56 L52 58Z M150 20 L162 35 L156 32 L150 38 L144 31 L140 31Z M250 40 L258 48 L253 46 L248 51 L244 46 L242 47Z M340 58 L348 63 L343 62 L338 66 L334 63Z" fill="#fff"/>
+    <path d="M0 118 Q100 92 200 112 T400 106 V140 H0Z" fill="#5fae6a"/><path d="M0 130 Q120 110 240 126 T400 120 V140 H0Z" fill="#3b8a4f"/>
+    <g fill="#fff"><circle cx="40" cy="128" r="2.2"/><circle cx="92" cy="122" r="2"/><circle cx="150" cy="131" r="2.4"/><circle cx="214" cy="124" r="2"/><circle cx="276" cy="132" r="2.2"/><circle cx="330" cy="125" r="2"/><circle cx="372" cy="131" r="2.3"/></g>
+    <g fill="#ffe7a3" font-size="18" font-family="serif"><text x="70" y="40">♪</text><text x="205" y="30">♫</text><text x="290" y="62" font-size="14">♪</text><text x="118" y="70" font-size="13">♫</text></g></svg>`;
+  // "Appleton: The Sound of Music" → headline "The Sound of Music", place "Appleton".
+  const tripHeadline = (t) => { const i = t.name.indexOf(':'); return i > 0 ? [t.name.slice(i + 1).trim(), t.name.slice(0, i).trim()] : [t.name, t.destination || '']; };
   function tripCard(d) {
     const t = d.trip;
-    if (!t) return `<a class="card tripc k-summer" href="/trips/"><div class="tripc-top"><span class="k">Trips &amp; vacations</span><span class="pic" aria-hidden="true">🧳</span></div>
-      <div class="big">Where to next?</div><div class="small">Weekend events, spring break, summer. Add an idea any time.</div><div class="go">Plan a trip</div></a>`;
-    const [cls, pic] = TRIP_THEME[t.kind] || TRIP_THEME.Other;
+    if (!t) return `<a class="card tripc wide k-summer" href="/trips/"><div class="tripc-top"><span class="k">Trips &amp; vacations</span><span class="pic" aria-hidden="true">🧳🗺️</span></div>
+      <div class="tripc-title">Where to next?</div><div class="small">Weekend events, spring break, summer. Add an idea any time.</div><div class="go">Plan a trip</div></a>`;
+    const [cls, pic] = TRIP_THEME[t.kind] || TRIP_THEME.Other, art = tripArt(t), [head, place] = tripHeadline(t);
     const days = daysUntil(t.start_date);
     const books = (t.trip_items || []).filter((x) => x.kind === 'Booking'), need = books.filter((x) => !x.done);
     const pct = books.length ? Math.round(100 * (books.length - need.length) / books.length) : 0;
-    return `<a class="card tripc ${cls}" href="/trips/#/trip/${esc(t.id)}">
-      <div class="tripc-top"><span class="k">Next trip</span><span class="pic" aria-hidden="true">${pic}</span></div>
-      <div class="big">${days <= 0 ? 'Now' : days === 1 ? 'Tomorrow' : days + ' days'} <small>to ${esc(t.name)}</small></div>
+    return `<a class="card tripc wide ${cls} ${art ? 'art-' + art : ''}" href="/trips/#/trip/${esc(t.id)}">${art ? ALPS : ''}
+      <div class="tripc-top"><span class="k">Coming up${place ? ' · ' + esc(place) : ''}</span>
+        <span class="cd">${days <= 0 ? '<b>Now</b>' : days === 1 ? '<b>1</b>day' : `<b>${days}</b>days`}</span></div>
+      <div class="tripc-title">${art ? '' : `<span aria-hidden="true">${pic}</span> `}${esc(head)}</div>
       <div class="small">${fmtDate(t.start_date)}${t.end_date && t.end_date !== t.start_date ? ' to ' + fmtDate(t.end_date) : ''}${t.destination ? ' · 📍 ' + esc(t.destination) : ''}</div>
       ${books.length ? `<div class="tripc-prog"><div class="tr"><i style="width:${pct}%"></i></div><span>${books.length - need.length} of ${books.length} booked</span></div>
         <div class="small">${need.length ? '⚠️ Still to book: ' + need.map((x) => esc(x.title)).join(', ') : '🎉 Everything is booked'}</div>` : ''}
-      <div class="go">Open trip</div></a>`;
+      <div class="go">Open the trip</div></a>`;
   }
   function tile(t) {
     const inner = `<span class="ico">${ICON[t.icon]}</span><span><b>${esc(t.name)}${t.soon ? '<span class="chip">Coming soon</span>' : ''}</b><span>${esc(t.desc)}</span></span>`;
@@ -214,7 +226,7 @@
         { name: 'Savings', desc: d.money && d.money.family ? 'Lily\'s and Amy\'s savings and goals' : 'Your savings and goal', icon: 'piggy', href: '/money/' },
         { name: d.money && d.money.family ? 'Family money' : 'My Apple Card', desc: d.money && d.money.family ? 'Accounts, every charge, budgets' : 'Your own charges and budget', icon: 'money', href: d.money && d.money.family ? '/money/' : '/money/#/transactions?person=me' } ] },
       { name: 'Home', note: 'Trips now; calendar and iPhone later', tiles: [
-        { name: 'Trips', desc: 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/', cls: 'fun' },
+        { name: 'Trips', desc: d.trip ? `Next: ${tripHeadline(d.trip)[0]}, ${daysUntil(d.trip.start_date) <= 0 ? 'now' : daysUntil(d.trip.start_date) === 1 ? 'tomorrow' : 'in ' + daysUntil(d.trip.start_date) + ' days'}` : 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/', cls: 'fun' },
         { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true },
         { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true } ] },
     ];
@@ -236,7 +248,7 @@
       ${previewing ? `<div class="viewas-bar"><span>Viewing as <b>${esc(first)}</b>. Layout only: the numbers are still yours.</span><button class="linkbtn" id="backme">Back to me</button></div>` : ''}
       <header class="head"><div class="who"><span class="eyebrow">Knaffla Family</span><h1>${greet()}, ${esc(first)}</h1></div>
         <button class="acct" id="acct">${esc(realFirst())} · Account</button></header>
-      <section class="today" aria-label="Today">${collegeCard(d)}${electionCard()}${tripCard(d)}${previewing ? '' : moneyCards(d)}</section>
+      <section class="today" aria-label="Today">${tripCard(d)}${collegeCard(d)}${electionCard()}${previewing ? '' : moneyCards(d)}</section>
       ${areas.map((a) => `<section class="area ${a.cls || ''}" aria-label="${esc(a.name)}"><div class="area-head"><h2>${esc(a.name)}</h2><span>${esc(a.note)}</span></div>
         <div class="sections">${a.tiles.map(tile).join('')}</div></section>`).join('')}
       <p class="foot">Add this page to your iPhone Home Screen: tap Share, then Add to Home Screen. Version ${APP_VERSION}.</p>
