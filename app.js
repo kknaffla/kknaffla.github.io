@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-4'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-5'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -195,8 +195,15 @@
     const inner = `<span class="ico">${ICON[t.icon]}</span><span><b>${esc(t.name)}${t.soon ? '<span class="chip">Coming soon</span>' : ''}</b><span>${esc(t.desc)}</span></span>`;
     return t.soon ? `<div class="tile soon">${inner}</div>` : `<a class="tile ${t.cls || ''}" href="${esc(safeUrl(t.href))}"${t.ext ? ' target="_blank" rel="noopener"' : ''}>${inner}</a>`;
   }
+  // Kevin only: "View as" previews another person's dashboard layout. The data stays Kevin's.
+  let viewAs = '', lastData = null;
+  const PEOPLE = ['Kevin', 'Janet', 'Lily', 'Amy'];
+  const realFirst = () => (me.display_name || '').split(' ')[0];
+  const canViewAs = () => realFirst().toLowerCase() === 'kevin';
   function render(d) {
-    const first = (me.display_name || '').split(' ')[0];
+    lastData = d;
+    const first = (canViewAs() && viewAs) || realFirst();
+    const previewing = first !== realFirst();
     const areas = [
       { name: 'College', note: 'Each girl has her own plan', tiles: [
         { name: 'Lily\'s college plan', desc: 'Class of 2027: applications, deadlines, scholarships', icon: 'college', href: '/college-plan/' },
@@ -214,7 +221,7 @@
     // "Your area": the signed-in person's own pages first; the shared areas follow without repeats.
     const all = areas.flatMap((a) => a.tiles);
     const pick = (...names) => names.map((n) => all.find((t) => t.name === n)).filter(Boolean);
-    const money = d.money && d.money.family ? 'Family money' : 'My Apple Card';
+    const money = previewing ? (first === 'Kevin' ? 'Family money' : 'My Apple Card') : d.money && d.money.family ? 'Family money' : 'My Apple Card';
     const MINE = {
       lily: { note: 'Your plan, Amy\'s plan, trips, savings and ballot', tiles: pick('Lily\'s college plan', 'Amy\'s college plan', 'Trips', 'Savings', money, 'Voter guide') },
       amy: { note: 'Your plan, Lily\'s plan, trips and savings', tiles: pick('Amy\'s college plan', 'Lily\'s college plan', 'Trips', 'Savings', money) },
@@ -226,14 +233,16 @@
       areas.splice(0, areas.length, { name: 'Your area', note: MINE.note, cls: 'mine', tiles: MINE.tiles }, ...areas.filter((a) => a.tiles.length));
     }
     app.innerHTML = `
+      ${previewing ? `<div class="viewas-bar"><span>Viewing as <b>${esc(first)}</b>. Layout only: the numbers are still yours.</span><button class="linkbtn" id="backme">Back to me</button></div>` : ''}
       <header class="head"><div class="who"><span class="eyebrow">Knaffla Family</span><h1>${greet()}, ${esc(first)}</h1></div>
-        <button class="acct" id="acct">${esc(first)} · Account</button></header>
-      <section class="today" aria-label="Today">${collegeCard(d)}${electionCard()}${tripCard(d)}${moneyCards(d)}</section>
+        <button class="acct" id="acct">${esc(realFirst())} · Account</button></header>
+      <section class="today" aria-label="Today">${collegeCard(d)}${electionCard()}${tripCard(d)}${previewing ? '' : moneyCards(d)}</section>
       ${areas.map((a) => `<section class="area ${a.cls || ''}" aria-label="${esc(a.name)}"><div class="area-head"><h2>${esc(a.name)}</h2><span>${esc(a.note)}</span></div>
         <div class="sections">${a.tiles.map(tile).join('')}</div></section>`).join('')}
       <p class="foot">Add this page to your iPhone Home Screen: tap Share, then Add to Home Screen. Version ${APP_VERSION}.</p>
       <dialog id="sheet"></dialog>`;
     document.getElementById('acct').onclick = openAccount;
+    const back = document.getElementById('backme'); if (back) back.onclick = () => { viewAs = ''; render(lastData); };
   }
 
   function currentTheme() { try { return localStorage.getItem('theme') || 'auto'; } catch (e) { return 'auto'; } }
@@ -246,6 +255,7 @@
       <button type="button" class="btn" id="savepw">Change password</button><div class="err" id="pwerr"></div>
       <div><div class="small muted" style="margin-bottom:6px">Appearance on this device</div>
         <div class="seg">${[['auto', 'Match phone'], ['light', 'Light'], ['dark', 'Dark']].map(([k, l]) => `<button type="button" data-theme-pick="${k}" class="${currentTheme() === k ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+      ${canViewAs() ? `<label>View as<select id="viewas">${PEOPLE.map((n) => `<option value="${n === 'Kevin' ? '' : n}"${(viewAs || '') === (n === 'Kevin' ? '' : n) ? ' selected' : ''}>${n === 'Kevin' ? 'Me (Kevin)' : n}</option>`).join('')}</select></label>` : ''}
       <button type="button" class="btn ghost" id="signout">Sign out of every family page</button>
       <button class="linkbtn" value="close">Close</button></form>`;
     dlg.showModal();
@@ -264,6 +274,8 @@
       dlg.querySelectorAll('[data-theme-pick]').forEach((x) => x.classList.toggle('on', x === b));
     });
     dlg.querySelector('#signout').onclick = signOut;
+    const va = dlg.querySelector('#viewas');
+    if (va) va.onchange = () => { viewAs = va.value; dlg.close(); render(lastData); window.scrollTo(0, 0); };
   }
   async function signOut() { await sb.auth.signOut(); session = null; me = null; viewSignIn(); }
 
