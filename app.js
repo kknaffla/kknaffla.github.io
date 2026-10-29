@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-12'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-13'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -84,7 +84,7 @@
     }
     const t = todayISO(), week = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
     const [cols, tasks, trips] = await Promise.all([
-      sb.from('colleges').select('name, deadline, plan, status').gte('deadline', t).not('status', 'in', '("Submitted","Complete","Admitted","Waitlisted","Denied","Not applying")').order('deadline').limit(3),
+      sb.from('colleges').select('name, deadline, plan, status').gte('deadline', t).not('status', 'in', '("Submitted","Complete","Admitted","Waitlisted","Denied","Not applying")').order('deadline').limit(6),
       sb.from('tasks').select('id, title, due_date, status, is_event').gte('due_date', t).lte('due_date', week).not('status', 'in', '("Done","Submitted","Not needed")').order('due_date').limit(50),
       sb.from('trips').select('id, name, kind, destination, start_date, end_date, trip_items(title, kind, done)').gte('end_date', t).not('status', 'in', '("Done","Cancelled")').order('start_date').limit(1),
     ]);
@@ -174,7 +174,15 @@
     const days = c ? daysUntil(c.deadline) : null;
     return `<a class="card tc t-lily ${days !== null && days <= 5 ? 'hot' : ''}" href="/college-plan/"><span class="cpic" aria-hidden="true">🎓</span>
       <div class="k">Lily's college plan</div>
-      ${c ? `<div class="big">${days === 0 ? 'Today' : days === 1 ? '1 day' : days + ' days'} <small>to ${esc(c.name)} ${esc(c.plan === 'Undecided' ? '' : c.plan)}</small></div><div class="small muted">Deadline ${fmtDate(c.deadline)}${d.cols[1] ? ` · then ${esc(d.cols[1].name)} ${fmtDate(d.cols[1].deadline)}` : ''}</div>` : ''}
+      ${c ? (() => {
+        // Every college due on the first deadline is named, so none drops off when several share a day.
+        const SHORT = { 'University of Michigan': 'U-M', 'Michigan State University': 'MSU', 'Michigan Technological University': 'Michigan Tech', 'Northern Michigan University': 'NMU' };
+        const nm = (x) => SHORT[x.name] || x.name;
+        const same = d.cols.filter((x) => x.deadline === c.deadline), after = d.cols.find((x) => x.deadline !== c.deadline);
+        const plan = same.every((x) => x.plan === c.plan) && c.plan !== 'Undecided' ? ' ' + c.plan : '';
+        return `<div class="big">${days === 0 ? 'Today' : days === 1 ? '1 day' : days + ' days'} <small>to ${same.length > 1 ? same.length + plan + ' applications' : esc(nm(c)) + esc(plan)}</small></div>
+          <div class="small">${same.map((x) => `<b>${esc(nm(x))}</b>`).join(' · ')} due ${fmtDate(c.deadline)}</div>${after ? `<div class="small muted">Then ${esc(nm(after))} ${fmtDate(after.deadline)}</div>` : ''}`;
+      })() : ''}
       <div class="small">${n ? `${n} open task${n > 1 ? 's' : ''} due this week` : 'No tasks due this week'}</div>
       <div class="go">Open college plan</div></a>`;
   }
