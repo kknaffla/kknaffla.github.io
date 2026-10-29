@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-3'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-4'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -216,8 +216,8 @@
     const pick = (...names) => names.map((n) => all.find((t) => t.name === n)).filter(Boolean);
     const money = d.money && d.money.family ? 'Family money' : 'My Apple Card';
     const MINE = {
-      lily: { note: 'Your college plan, savings and ballot', tiles: pick('Lily\'s college plan', 'Savings', money, 'Voter guide') },
-      amy: { note: 'Your college plan and savings', tiles: pick('Amy\'s college plan', 'Savings', money) },
+      lily: { note: 'Your plan, Amy\'s plan, trips, savings and ballot', tiles: pick('Lily\'s college plan', 'Amy\'s college plan', 'Trips', 'Savings', money, 'Voter guide') },
+      amy: { note: 'Your plan, Lily\'s plan, trips and savings', tiles: pick('Amy\'s college plan', 'Lily\'s college plan', 'Trips', 'Savings', money) },
       kevin: { note: 'Both girls\' plans and the family money', tiles: pick('Lily\'s college plan', 'Amy\'s college plan', money, 'Trips') },
       janet: { note: 'Both girls\' plans, trips and your money', tiles: pick('Lily\'s college plan', 'Amy\'s college plan', money, 'Trips') },
     }[first.toLowerCase()];
