@@ -4,7 +4,7 @@
    only shows what comes back. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-1'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-2'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app'), sheet = document.getElementById('sheet');
@@ -420,9 +420,36 @@
         if (error) { toast('Import failed: ' + error.message); btn.disabled = false; btn.textContent = 'Apply to charges'; return; }
         ok += data.matched; miss += data.unmatched; missing = missing.concat(data.missing || []);
       }
+      // Second pass: Apple and Copilot often spell a merchant differently ("Mcdonalds" vs "Mcdonald's"), so a
+      // leftover row is matched on date and amount alone when that points at exactly one unassigned charge.
+      const loose = await looseMatch(document.getElementById('ap_acct').value, missing);
       btn.textContent = 'Apply to charges';
-      document.getElementById('ap_out').innerHTML = `Done: ${ok} charges now say who bought them, ${miss} had no matching charge in Copilot yet${missing.length ? ` (${missing.slice(0, 8).map((r) => `${esc(r.date)} ${esc(r.merchant)} ${money(r.amount)}`).join('; ')}${missing.length > 8 ? '…' : ''})` : ''}.`;
+      document.getElementById('ap_out').innerHTML = `Done: ${ok + loose.done} charges now say who bought them (${loose.done} by date and amount only), ${miss - loose.done} had no matching charge in Copilot yet${loose.left.length ? ` (${loose.left.slice(0, 8).map((r) => `${esc(r.date)} ${esc(r.merchant)} ${money(r.amount)}`).join('; ')}${loose.left.length > 8 ? '…' : ''})` : ''}.`;
     };
+  }
+  async function looseMatch(acctId, rows) {
+    const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+    const key = (d, a) => d + '|' + Number(a).toFixed(2);
+    let tx = [];
+    for (let p = 0; p < 10; p++) {
+      const { data } = await sb.from('transactions').select('id, date, amount').eq('account_id', acctId).is('purchased_by', null).range(p * 1000, p * 1000 + 999);
+      tx = tx.concat(data || []); if (!data || data.length < 1000) break;
+    }
+    const txBy = {}; tx.forEach((t) => (txBy[key(t.date, t.amount)] = txBy[key(t.date, t.amount)] || []).push(t));
+    const rowsBy = {}; rows.forEach((r) => (rowsBy[key(r.date, r.amount)] = rowsBy[key(r.date, r.amount)] || []).push(r));
+    const used = new Set(), byPerson = {}, left = [];
+    for (const [k, rs] of Object.entries(rowsBy)) {
+      const [d, a] = k.split('|'); let cands = [];
+      for (const off of [0, 1, -1, 2, 3]) { cands = (txBy[key(addDays(d, off), a)] || []).filter((t) => !used.has(t.id)); if (cands.length) break; }
+      const people = new Set(rs.map((r) => r.by));
+      if (cands.length && cands.length === rs.length && people.size === 1) cands.forEach((t) => { used.add(t.id); (byPerson[rs[0].by] = byPerson[rs[0].by] || []).push(t.id); });
+      else left.push(...rs);
+    }
+    let done = 0;
+    for (const [by, ids] of Object.entries(byPerson)) {
+      for (let i = 0; i < ids.length; i += 200) { const { error } = await sb.from('transactions').update({ purchased_by: by }).in('id', ids.slice(i, i + 200)); if (!error) done += Math.min(200, ids.length - i); }
+    }
+    return { done, left };
   }
   // Apple Card CSV: Transaction Date, Clearing Date, Description, Merchant, Category, Type, Amount (USD), Purchased By
   function parseAppleCsv(text) {
