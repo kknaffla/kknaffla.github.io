@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-8'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.29-9'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -204,8 +204,11 @@
       <div class="go">Open the trip</div></a>`;
   }
   function tile(t) {
-    const inner = `<span class="ico">${ICON[t.icon]}</span><span><b>${esc(t.name)}${t.soon ? '<span class="chip">Coming soon</span>' : ''}</b><span>${esc(t.desc)}</span></span>`;
-    return t.soon ? `<div class="tile soon">${inner}</div>` : `<a class="tile ${t.cls || ''}" href="${esc(safeUrl(t.href))}"${t.ext ? ' target="_blank" rel="noopener"' : ''}>${inner}</a>`;
+    // Each tile wears its own colors and a picture of what it's for; the big faded copy sits in the corner.
+    const pic = t.pic ? `<span class="ico pic" aria-hidden="true">${t.pic}</span>` : `<span class="ico">${ICON[t.icon]}</span>`;
+    const inner = `${pic}<span><b>${esc(t.name)}${t.soon ? '<span class="chip">Coming soon</span>' : ''}</b><span>${esc(t.desc)}</span></span>${t.pic ? `<span class="wm" aria-hidden="true">${t.pic}</span>` : ''}`;
+    const cls = ['tile', t.theme ? 'themed ' + t.theme : '', t.cls || ''].join(' ').trim();
+    return t.soon ? `<div class="${cls} soon">${inner}</div>` : `<a class="${cls}" href="${esc(safeUrl(t.href))}"${t.ext ? ' target="_blank" rel="noopener"' : ''}>${inner}</a>`;
   }
   // Kevin only: "View as" previews another person's dashboard layout. The data stays Kevin's.
   let viewAs = '', lastData = null;
@@ -218,17 +221,17 @@
     const previewing = first !== realFirst();
     const areas = [
       { name: 'College', note: 'Each girl has her own plan', tiles: [
-        { name: 'Lily\'s college plan', desc: 'Class of 2027: applications, deadlines, scholarships', icon: 'college', href: '/college-plan/' },
-        { name: 'Amy\'s college plan', desc: 'Class of 2029: AP, dual enrollment, grades 10 to 12', icon: 'college', href: '/amy/' } ] },
+        { name: 'Lily\'s college plan', desc: 'Class of 2027: applications, deadlines, scholarships', icon: 'college', href: '/college-plan/', theme: 't-lily', pic: '🎓' },
+        { name: 'Amy\'s college plan', desc: 'Class of 2029: AP, dual enrollment, grades 10 to 12', icon: 'college', href: '/amy/', theme: 't-amy', pic: '📚' } ] },
       { name: 'Voting', note: 'Your own convictions and picks', tiles: [
-        { name: 'Voter guide', desc: 'Every item on our ballot, with family alignment', icon: 'ballot', href: '/voter/' } ] },
+        { name: 'Voter guide', desc: 'Every item on our ballot, with family alignment', icon: 'ballot', href: '/voter/', theme: 't-vote', pic: '🗳️' } ] },
       { name: 'Money', note: d.money && d.money.family ? 'Accounts, charges and budgets' : 'Your savings and your Apple Card', tiles: [
-        { name: 'Savings', desc: d.money && d.money.family ? 'Lily\'s and Amy\'s savings and goals' : 'Your savings and goal', icon: 'piggy', href: '/money/' },
-        { name: d.money && d.money.family ? 'Family money' : 'My Apple Card', desc: d.money && d.money.family ? 'Accounts, every charge, budgets' : 'Your own charges and budget', icon: 'money', href: d.money && d.money.family ? '/money/' : '/money/#/transactions?person=me' } ] },
+        { name: 'Savings', desc: d.money && d.money.family ? 'Lily\'s and Amy\'s savings and goals' : 'Your savings and goal', icon: 'piggy', href: '/money/', theme: 't-save', pic: '🐷' },
+        { name: d.money && d.money.family ? 'Family money' : 'My Apple Card', desc: d.money && d.money.family ? 'Accounts, every charge, budgets' : 'Your own charges and budget', icon: 'money', href: d.money && d.money.family ? '/money/' : '/money/#/transactions?person=me', theme: 't-money', pic: d.money && d.money.family ? '💰' : '💳' } ] },
       { name: 'Home', note: 'Trips now; calendar and iPhone later', tiles: [
-        { name: 'Trips', desc: d.trip ? `Next: ${tripHeadline(d.trip)[0]}, ${daysUntil(d.trip.start_date) <= 0 ? 'now' : daysUntil(d.trip.start_date) === 1 ? 'tomorrow' : 'in ' + daysUntil(d.trip.start_date) + ' days'}` : 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/', cls: 'fun' },
-        { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true },
-        { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true } ] },
+        { name: 'Trips', desc: d.trip ? `Next: ${tripHeadline(d.trip)[0]}, ${daysUntil(d.trip.start_date) <= 0 ? 'now' : daysUntil(d.trip.start_date) === 1 ? 'tomorrow' : 'in ' + daysUntil(d.trip.start_date) + ' days'}` : 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/', theme: 't-trip', pic: '🧳' },
+        { name: 'Family calendar', desc: 'Everyone\'s events on every iPhone', icon: 'calendar', soon: true, theme: 't-cal', pic: '📅' },
+        { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true, theme: 't-phone', pic: '📱' } ] },
     ];
     // "Your area": the signed-in person's own pages first; the shared areas follow without repeats.
     const all = areas.flatMap((a) => a.tiles);
