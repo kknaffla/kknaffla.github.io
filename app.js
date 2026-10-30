@@ -3,7 +3,7 @@
    on every page at kknaffla.github.io. Vanilla JS, no build step. */
 (() => {
   'use strict';
-  const APP_VERSION = '2026.10.29-14'; // keep in sync with the ?v= tags in index.html
+  const APP_VERSION = '2026.10.30-1'; // keep in sync with the ?v= tags in index.html
   const CFG = window.APP_CONFIG || {};
   const TZ = CFG.TIME_ZONE || 'America/Detroit';
   const app = document.getElementById('app');
@@ -254,6 +254,7 @@
       { name: 'Home', note: 'Trips and the family calendar; iPhone setup later', tiles: [
         { name: 'Trips', desc: d.trip ? `Next: ${tripHeadline(d.trip)[0]}, ${daysUntil(d.trip.start_date) <= 0 ? 'now' : daysUntil(d.trip.start_date) === 1 ? 'tomorrow' : 'in ' + daysUntil(d.trip.start_date) + ' days'}` : 'Weekend events, spring break, summer vacations', icon: 'suitcase', href: '/trips/', theme: 't-trip', pic: '🧳' },
         { name: 'Family calendar', desc: 'iPhone Family calendar, both plans, trips and birthdays in one look', icon: 'calendar', href: '/calendar/', theme: 't-cal', pic: '📅' },
+        { name: 'Music', desc: 'Follow the artists you like; their news shows in the Knaffla Brief', icon: 'calendar', href: '/music/', theme: 't-music', pic: '🎶' },
         { name: 'iPhone & Apple', desc: 'Home Screen, calendars, reminders', icon: 'phone', soon: true, theme: 't-phone', pic: '📱' } ] },
     ];
     // "Your area": the signed-in person's own pages first; the shared areas follow without repeats.

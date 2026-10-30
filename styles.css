@@ -132,7 +132,7 @@ a.card.tripc:hover { filter: brightness(1.05); }
 .t-lily { --g1: #1d3f8f; --g2: #2f86c9; } .t-amy { --g1: #8a1f5c; --g2: #d9486f; }
 .t-vote { --g1: #3b2a7a; --g2: #2a7f8f; } .t-save { --g1: #1d6b45; --g2: #4a9a3d; }
 .t-money { --g1: #5a3b0c; --g2: #b0700f; } .t-trip { --g1: #5b2a86; --g2: #c2306f; }
-.t-cal { --g1: #a3361f; --g2: #d9762b; } .t-phone { --g1: #2c3a4a; --g2: #56708a; }
+.t-cal { --g1: #a3361f; --g2: #d9762b; } .t-music { --g1: #2b1055; --g2: #f107a3; } .t-phone { --g1: #2c3a4a; --g2: #56708a; }
 .tile.themed { position: relative; overflow: hidden; border: 0; color: #fff; min-height: 84px; background: linear-gradient(135deg, var(--g1), var(--g2)); transition: transform .15s ease, filter .15s ease; }
 a.tile.themed:hover { transform: translateY(-2px); filter: brightness(1.07); }
 .tile.themed > span:not(.wm) { position: relative; z-index: 1; }
