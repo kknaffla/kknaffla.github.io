@@ -24,7 +24,9 @@
     vote: { label: 'Election', pic: '🗳️' },
   };
   let off = new Set(); try { off = new Set(JSON.parse(localStorage.getItem('cal-off') || '[]')); } catch (e) {}
-  let span = 60, events = [], sweptAt = null, SB = null, addOpen = false, schoolRows = [];
+  let span = 60, events = [], sweptAt = null, SB = null, addOpen = false, schoolRows = [], themes = [], themeOpen = false;
+  // Monday of the week that holds a date, for weekly themes.
+  const mondayOf = (iso) => { const d = new Date(iso + 'T12:00:00Z'); return addDays(iso, -((d.getUTCDay() + 6) % 7)); };
 
   async function load(sb) {
     const t = todayISO(), end = addDays(t, 120);
@@ -36,8 +38,10 @@
       sb.from('amy_tasks').select('title,due_date,status,category').gte('due_date', t).lte('due_date', end),
       sb.from('trips').select('id,name,start_date,end_date,destination,status').gte('end_date', t).lte('start_date', end),
       sb.from('family_dates').select('id,title,kind,month,day,on_date,end_date,note,source'),
+      sb.from('brief_themes').select('id,start_date,end_date,theme_name,notes,set_by,filled_at,emoji').gte('end_date', addDays(t, -7)).order('start_date'),
     ]);
-    const [ic, col, sch, lt, amy, trips, fd] = q.map((r) => r.data || []);
+    const [ic, col, sch, lt, amy, trips, fd, th] = q.map((r) => r.data || []);
+    themes = th;
     schoolRows = fd.filter((f) => f.on_date && f.kind !== 'Birthday').sort((a, b) => b.on_date.localeCompare(a.on_date)).slice(0, 40);
     const out = [];
     for (const e of ic) {
@@ -95,6 +99,17 @@
     html += `<div class="more">${span < 120 ? '<button class="btn ghost" id="moreb">Show 4 months</button>' : '<button class="btn ghost" id="lessb">Show 2 months</button>'}</div>
       <div class="howto"><div><b>Add or delete family events</b> in the Family calendar on your iPhone. They show up here after the next copy, a few times a day.</div>
       <div><b>Want a plan's dates on your phone?</b> Lily's plan has its own subscription: College plan › Calendar › Subscribe.</div></div>
+      <details class="adddates" ${themeOpen ? 'open' : ''}><summary>🎨 Brief themes: set a theme for a week or a day</summary>
+        <p class="small muted" style="margin:8px 0 0">Give a theme and Claude fills in a quote or fun fact for each day on Sunday evening. No theme set? Claude picks one from the season and what's coming up.</p>
+        <form id="themef" class="addgrid">
+          <label class="wide">Theme<input name="theme_name" required maxlength="80" placeholder="Patrick Stewart / Captain Picard"></label>
+          <label>For<select name="span"><option value="week">The week of</option><option value="day">Just one day</option></select></label>
+          <label>Date<input name="date" type="date" required value="${esc(addDays(mondayOf(todayISO()), 7))}"></label>
+          <label class="wide">Notes for Claude (optional)<input name="notes" maxlength="300" placeholder="Lily's pick. Famous lines, a few fun facts, nothing scary."></label>
+          <button class="btn">Save theme</button><span class="small muted" id="thememsg"></span>
+        </form>
+        <div class="added">${themes.length ? themes.map((r) => `<div class="arow"><span>${esc(r.emoji || '🎨')} <b>${esc(r.theme_name)}</b> <span class="small muted">${esc(r.start_date)}${r.end_date !== r.start_date ? ' to ' + esc(r.end_date) : ''} · ${r.set_by === 'Claude' ? 'picked by Claude' : 'family pick'}${r.filled_at ? ' · ready' : ' · Claude fills it Sunday'}</span></span>${r.set_by === 'Claude' && r.filled_at ? '' : `<button class="linkbtn" data-rmt="${esc(r.id)}">Remove</button>`}</div>`).join('') : '<div class="small muted">No themes yet.</div>'}</div>
+      </details>
       <details class="adddates" ${addOpen ? 'open' : ''}><summary>➕ Add dates: no school, half days, holidays, family events</summary>
         <form id="addf" class="addgrid">
           <label>What<input name="title" required maxlength="80" placeholder="Snow day, no school"></label>
@@ -108,6 +123,16 @@
       </details>`;
     app.innerHTML = html;
     app.querySelectorAll('.chip-btn').forEach((b) => b.onclick = () => { const k = b.dataset.src; off.has(k) ? off.delete(k) : off.add(k); try { localStorage.setItem('cal-off', JSON.stringify([...off])); } catch (e) {} render(); });
+    const tf = document.getElementById('themef');
+    tf.onsubmit = async (e) => { e.preventDefault(); const f = new FormData(tf), msg = document.getElementById('thememsg');
+      const d = String(f.get('date')), week = f.get('span') === 'week', start = week ? mondayOf(d) : d;
+      const row = { theme_name: String(f.get('theme_name')).trim(), notes: String(f.get('notes') || '').trim() || null, start_date: start, end_date: week ? addDays(start, 6) : start, set_by: 'Family' };
+      const clash = themes.find((x) => x.start_date <= row.end_date && x.end_date >= row.start_date && x.set_by !== 'Claude');
+      if (clash) { msg.textContent = `"${clash.theme_name}" already covers some of those days. Remove it first.`; return; }
+      const { error } = await SB.from('brief_themes').insert(row);
+      if (error) { msg.textContent = 'Could not save: ' + error.message; return; }
+      themeOpen = true; await load(SB); render(); };
+    app.querySelectorAll('[data-rmt]').forEach((b) => b.onclick = async () => { const { error } = await SB.from('brief_themes').delete().eq('id', b.dataset.rmt); if (!error) { themeOpen = true; await load(SB); render(); } });
     const af = document.getElementById('addf');
     af.onsubmit = async (e) => { e.preventDefault(); const f = new FormData(af), msg = document.getElementById('addmsg');
       const row = { title: String(f.get('title')).trim(), kind: f.get('kind'), on_date: f.get('on_date'), end_date: f.get('end_date') || null, note: String(f.get('note') || '').trim() || null, source: 'Family page' };
