@@ -38,3 +38,13 @@ a.ev:hover { border-color: var(--c); }
 .howto { margin: 22px 0 8px; padding: 14px 16px; border-radius: 14px; background: var(--chip); font-size: 14px; display: grid; gap: 6px; }
 .howto b { color: var(--ink); }
 .empty { padding: 18px; text-align: center; color: var(--muted); }
+.s-school { --c: #0b5f73; --c2: #138a6c; } .s-holiday { --c: #a3185d; --c2: #c2306f; }
+.adddates { margin: 8px 0 24px; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--card); }
+.adddates summary { cursor: pointer; font-weight: 700; color: var(--ink); }
+.addgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px; margin-top: 12px; align-items: end; }
+.addgrid .wide { grid-column: 1 / -1; }
+.addgrid input, .addgrid select { width: 100%; min-width: 0; }
+.added { margin-top: 12px; display: grid; gap: 6px; }
+.arow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); min-width: 0; }
+.arow > span { min-width: 0; overflow-wrap: anywhere; }
+.linkbtn { background: none; border: 0; color: var(--lake); text-decoration: underline; cursor: pointer; font: 600 13px var(--f-body); }
