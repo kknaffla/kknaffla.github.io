@@ -96,7 +96,12 @@
     const sb = window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { app.innerHTML = '<div class="signin"><h1>Family calendar</h1><p>Sign in on the family page first.</p><a class="btn" href="/" style="text-align:center;text-decoration:none">Go to the family page</a></div>'; return; }
+    // The Knaffla Brief's quiz "reveal" link lands here with the answer in the hash.
+    const ans = (location.hash.match(/^#answer=(.+)$/) || [])[1];
+    if (ans) { const box = document.createElement('div'); box.className = 'calhero'; box.style.background = 'linear-gradient(135deg,#0b5f73,#138a6c)'; box.innerHTML = `<h1>🧠 Quiz answer</h1><p style="font-size:22px;font-weight:700">${esc(decodeURIComponent(ans))}</p><p>Back to the brief for the next one tomorrow.</p>`; app.replaceChildren(box); history.replaceState(null, '', location.pathname); const rest = document.createElement('div'); app.appendChild(rest); }
     try { await load(sb); } catch (err) { app.innerHTML = `<p class="pad">The calendar couldn't load. ${esc(err.message || err)}</p>`; return; }
+    const keep = app.firstElementChild && app.firstElementChild.textContent.includes('Quiz answer') ? app.firstElementChild : null;
     render();
+    if (keep) app.prepend(keep);
   })();
 })();
